@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+const path = require('path');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
@@ -29,6 +30,17 @@ app.use('/api/sessions', require('./routes/sessions'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/connections', require('./routes/connections'));
 app.use('/api/topics', require('./routes/topics'));
+
+// In production, serve the built React app from the same server
+// (same origin: no CORS config needed, WebSockets connect to the same host)
+if (process.env.NODE_ENV === 'production') {
+  const buildDir = path.join(__dirname, '../../frontend/build');
+  app.use(express.static(buildDir));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) return next();
+    res.sendFile(path.join(buildDir, 'index.html'));
+  });
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {

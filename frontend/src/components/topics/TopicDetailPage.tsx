@@ -238,10 +238,8 @@ const TopicDetailPage: React.FC = () => {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-gray-800">Our Plan</h2>
               {endorsed.length > 0 && (
-                <a
-                  href={`http://localhost:3001/api/topics/${topic.id}/plan.md`}
-                  onClick={async (e) => {
-                    e.preventDefault();
+                <button
+                  onClick={async () => {
                     const res = await api.get(`/topics/${topic.id}/plan.md`, { responseType: 'blob' });
                     const url = URL.createObjectURL(res.data);
                     const a = document.createElement('a');
@@ -253,7 +251,7 @@ const TopicDetailPage: React.FC = () => {
                   className="text-sm text-teal-600 hover:text-teal-800"
                 >
                   ⬇ Download (Markdown)
-                </a>
+                </button>
               )}
             </div>
 
