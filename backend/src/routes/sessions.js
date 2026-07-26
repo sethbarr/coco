@@ -3,6 +3,7 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const auth = require('../middleware/auth');
+const { generateSessionRecap } = require('../services/claude-simple');
 
 // Middleware to check if user is authenticated
 router.use(auth);
@@ -328,6 +329,8 @@ router.get('/:id', async (req, res) => {
     const session = await prisma.session.findUnique({
       where: { id },
       include: {
+        topic: { select: { id: true, title: true } },
+        recap: { select: { id: true } },
         participants: {
           include: {
             user: {
@@ -362,6 +365,89 @@ router.get('/:id', async (req, res) => {
     res.json(session);
   } catch (error) {
     console.error('Error getting session:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+/**
+ * @route POST /api/sessions/:id/wrapup
+ * @desc Wrap up a topic joint session: Coco generates a structured recap
+ *       (summary, agreements, commitments) for both partners to endorse
+ * @access Private
+ */
+router.post('/:id/wrapup', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const session = await prisma.session.findUnique({
+      where: { id },
+      include: {
+        topic: { include: { summaries: { include: { user: { select: { id: true, pseudonym: true } } } } } },
+        recap: { include: { agreements: true } },
+        participants: { include: { user: { select: { id: true, pseudonym: true } } } },
+        messages: {
+          orderBy: { sentAt: 'asc' },
+          include: { sender: { select: { id: true, pseudonym: true } } }
+        }
+      }
+    });
+
+    if (!session) return res.status(404).json({ message: 'Session not found' });
+    if (!session.participants.some(p => p.user.id === userId)) {
+      return res.status(403).json({ message: 'User is not a participant in this session' });
+    }
+    if (session.type !== 'joint' || !session.topic) {
+      return res.status(400).json({ message: 'Wrap-up is only available for topic joint sessions' });
+    }
+    if (session.recap) {
+      return res.json(session.recap); // already wrapped up
+    }
+    if (session.messages.length < 2) {
+      return res.status(400).json({ message: 'Not enough conversation yet to wrap up' });
+    }
+
+    const participantNames = session.participants.map(p => p.user.pseudonym);
+    const summaries = session.topic.summaries
+      .filter(s => s.approvedAt)
+      .map(s => ({ name: s.user.pseudonym, content: s.content }));
+
+    const recapData = await generateSessionRecap(
+      session.topic.title, participantNames, session.messages, summaries
+    );
+    if (!recapData) {
+      return res.status(502).json({ message: 'Could not generate a recap — please try again' });
+    }
+
+    // Map commitment pseudonyms back to user ids
+    const byName = {};
+    session.participants.forEach(p => { byName[p.user.pseudonym] = p.user.id; });
+
+    const recap = await prisma.sessionRecap.create({
+      data: {
+        sessionId: session.id,
+        topicId: session.topic.id,
+        summary: recapData.summary,
+        suggestedCheckInDays: recapData.suggestedCheckInDays,
+        agreements: {
+          create: [
+            ...recapData.agreements.map(text => ({
+              topicId: session.topic.id, text, ownerId: null
+            })),
+            ...recapData.commitments
+              .filter(c => byName[c.name])
+              .map(c => ({
+                topicId: session.topic.id, text: c.text, ownerId: byName[c.name]
+              }))
+          ]
+        }
+      },
+      include: { agreements: true }
+    });
+
+    res.status(201).json(recap);
+  } catch (error) {
+    console.error('Error wrapping up session:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

@@ -297,4 +297,144 @@ router.post('/:id/joint', async (req, res) => {
   }
 });
 
+/** Load plan data (recaps + agreements) with endorsement state for a topic. */
+async function loadPlan(topicId) {
+  return prisma.sessionRecap.findMany({
+    where: { topicId },
+    orderBy: { createdAt: 'desc' },
+    include: { agreements: { orderBy: { createdAt: 'asc' } } }
+  });
+}
+
+/**
+ * @route GET /api/topics/:id/plan
+ * @desc The topic's living plan: recaps awaiting endorsement + agreements
+ */
+router.get('/:id/plan', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { topic, error } = await loadTopicForUser(req.params.id, userId);
+    if (error) return res.status(error.status).json({ message: error.message });
+
+    const recaps = await loadPlan(topic.id);
+    const { creator, recipient } = topic.connection;
+    const names = { [creator.id]: creator.pseudonym, [recipient.id]: recipient.pseudonym };
+
+    res.json({
+      nextCheckInAt: topic.nextCheckInAt,
+      recaps: recaps.map(r => {
+        const endorsements = r.endorsements || {};
+        return {
+          id: r.id,
+          summary: r.summary,
+          createdAt: r.createdAt,
+          suggestedCheckInDays: r.suggestedCheckInDays,
+          endorsedByMe: !!endorsements[userId],
+          endorsedByPartner: Object.keys(endorsements).some(id => id !== userId),
+          fullyEndorsed: Object.keys(endorsements).length >= 2,
+          agreements: r.agreements.map(a => ({
+            id: a.id,
+            text: a.text,
+            status: a.status,
+            owner: a.ownerId ? names[a.ownerId] || null : null
+          }))
+        };
+      })
+    });
+  } catch (error) {
+    console.error('Error loading plan:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+/**
+ * @route POST /api/topics/:id/recaps/:recapId/endorse
+ * @desc Endorse a session recap. When both partners endorse, agreements
+ *       become active and the next check-in date is set.
+ */
+router.post('/:id/recaps/:recapId/endorse', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { topic, error } = await loadTopicForUser(req.params.id, userId);
+    if (error) return res.status(error.status).json({ message: error.message });
+
+    const recap = await prisma.sessionRecap.findFirst({
+      where: { id: req.params.recapId, topicId: topic.id }
+    });
+    if (!recap) return res.status(404).json({ message: 'Recap not found' });
+
+    const endorsements = { ...(recap.endorsements || {}), [userId]: new Date().toISOString() };
+    const fullyEndorsed = Object.keys(endorsements).length >= 2;
+
+    await prisma.sessionRecap.update({
+      where: { id: recap.id },
+      data: { endorsements }
+    });
+
+    if (fullyEndorsed) {
+      await prisma.agreement.updateMany({
+        where: { recapId: recap.id, status: 'proposed' },
+        data: { status: 'active' }
+      });
+      const days = recap.suggestedCheckInDays || 7;
+      await prisma.topic.update({
+        where: { id: topic.id },
+        data: { nextCheckInAt: new Date(Date.now() + days * 24 * 60 * 60 * 1000) }
+      });
+    }
+
+    res.json({ fullyEndorsed });
+  } catch (error) {
+    console.error('Error endorsing recap:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+/**
+ * @route GET /api/topics/:id/plan.md
+ * @desc Download the plan as a Markdown document (only endorsed content)
+ */
+router.get('/:id/plan.md', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { topic, error } = await loadTopicForUser(req.params.id, userId);
+    if (error) return res.status(error.status).json({ message: error.message });
+
+    const recaps = (await loadPlan(topic.id))
+      .filter(r => Object.keys(r.endorsements || {}).length >= 2);
+    const { creator, recipient } = topic.connection;
+    const names = { [creator.id]: creator.pseudonym, [recipient.id]: recipient.pseudonym };
+
+    const active = recaps.flatMap(r => r.agreements).filter(a => a.status === 'active');
+    const shared = active.filter(a => !a.ownerId);
+    const personal = active.filter(a => a.ownerId);
+
+    let md = `# Our Plan — ${topic.title}\n\n`;
+    md += `*${creator.pseudonym} & ${recipient.pseudonym} · exported ${new Date().toLocaleDateString()}*\n\n`;
+    if (topic.nextCheckInAt) {
+      md += `**Next check-in:** ${new Date(topic.nextCheckInAt).toLocaleDateString()}\n\n`;
+    }
+    if (shared.length) {
+      md += `## Our agreements\n\n${shared.map(a => `- ${a.text}`).join('\n')}\n\n`;
+    }
+    if (personal.length) {
+      md += `## Individual commitments\n\n${personal.map(a => `- **${names[a.ownerId]}**: ${a.text}`).join('\n')}\n\n`;
+    }
+    if (recaps.length) {
+      md += `## Session notes\n\n`;
+      for (const r of recaps) {
+        md += `### ${new Date(r.createdAt).toLocaleDateString()}\n\n${r.summary}\n\n`;
+      }
+    }
+    md += `---\n*Prepared with Coco. Both partners endorsed everything in this document.*\n`;
+
+    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="our-plan-${topic.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.md"`);
+    res.send(md);
+  } catch (error) {
+    console.error('Error exporting plan:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 module.exports = router;

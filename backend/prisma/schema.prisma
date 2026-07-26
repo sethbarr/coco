@@ -66,19 +66,52 @@ model Connection {
 }
 
 model Topic {
-  id           String   @id @default(uuid())
-  title        String
-  connectionId String
-  createdById  String
-  status       String   @default("prep") // 'prep', 'joint_ready', 'closed'
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String    @id @default(uuid())
+  title         String
+  connectionId  String
+  createdById   String
+  status        String    @default("prep") // 'prep', 'joint_ready', 'closed'
+  nextCheckInAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   // Relationships
   connection Connection      @relation(fields: [connectionId], references: [id])
   createdBy  User            @relation("TopicCreator", fields: [createdById], references: [id])
   summaries  SharedSummary[]
   sessions   Session[]
+  recaps     SessionRecap[]
+  agreements Agreement[]
+}
+
+model SessionRecap {
+  id                    String   @id @default(uuid())
+  sessionId             String   @unique
+  topicId               String
+  summary               String
+  suggestedCheckInDays  Int?
+  endorsements          Json     @default("{}") // { userId: ISO timestamp }
+  createdAt             DateTime @default(now())
+
+  // Relationships
+  session    Session     @relation(fields: [sessionId], references: [id])
+  topic      Topic       @relation(fields: [topicId], references: [id])
+  agreements Agreement[]
+}
+
+model Agreement {
+  id        String   @id @default(uuid())
+  topicId   String
+  recapId   String
+  text      String
+  ownerId   String?  // null = shared agreement; set = one partner's commitment
+  status    String   @default("proposed") // 'proposed', 'active', 'kept', 'struggling', 'retired'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  topic Topic        @relation(fields: [topicId], references: [id])
+  recap SessionRecap @relation(fields: [recapId], references: [id])
 }
 
 model SharedSummary {
@@ -110,6 +143,7 @@ model Session {
   topic      Topic?     @relation(fields: [topicId], references: [id])
   participants SessionParticipant[]
   messages   Message[]
+  recap      SessionRecap?
 }
 
 model SessionParticipant {

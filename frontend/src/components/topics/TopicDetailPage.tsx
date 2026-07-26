@@ -3,6 +3,29 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import api from '../../utils/api';
 import { TopicView } from './TopicsPage';
 
+interface PlanAgreement {
+  id: string;
+  text: string;
+  status: string;
+  owner: string | null;
+}
+
+interface PlanRecap {
+  id: string;
+  summary: string;
+  createdAt: string;
+  suggestedCheckInDays: number | null;
+  endorsedByMe: boolean;
+  endorsedByPartner: boolean;
+  fullyEndorsed: boolean;
+  agreements: PlanAgreement[];
+}
+
+interface Plan {
+  nextCheckInAt: string | null;
+  recaps: PlanRecap[];
+}
+
 const Step: React.FC<{ n: number; title: string; done: boolean; children: React.ReactNode }> = ({ n, title, done, children }) => (
   <div className="bg-white rounded-lg shadow-md p-6 mb-4">
     <div className="flex items-center mb-3">
@@ -21,6 +44,7 @@ const TopicDetailPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [topic, setTopic] = useState<TopicView | null>(null);
+  const [plan, setPlan] = useState<Plan | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
@@ -33,6 +57,9 @@ const TopicDetailPage: React.FC = () => {
         setDraft(res.data.mySummary?.content || '');
       })
       .catch(err => setError(err.response?.data?.message || 'Failed to load topic'));
+    api.get(`/topics/${id}/plan`)
+      .then(res => setPlan(res.data))
+      .catch(() => {});
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
@@ -199,6 +226,111 @@ const TopicDetailPage: React.FC = () => {
           </p>
         )}
       </Step>
+
+      {/* Our Plan */}
+      {plan && plan.recaps.length > 0 && (() => {
+        const endorsed = plan.recaps.filter(r => r.fullyEndorsed);
+        const activeShared = endorsed.flatMap(r => r.agreements).filter(a => a.status === 'active' && !a.owner);
+        const activePersonal = endorsed.flatMap(r => r.agreements).filter(a => a.status === 'active' && a.owner);
+        const pending = plan.recaps.filter(r => !r.fullyEndorsed);
+        return (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-4 border-t-4 border-blue-400">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-gray-800">Our Plan</h2>
+              {endorsed.length > 0 && (
+                <a
+                  href={`http://localhost:3001/api/topics/${topic.id}/plan.md`}
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    const res = await api.get(`/topics/${topic.id}/plan.md`, { responseType: 'blob' });
+                    const url = URL.createObjectURL(res.data);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `our-plan.md`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="text-sm text-teal-600 hover:text-teal-800"
+                >
+                  ⬇ Download (Markdown)
+                </a>
+              )}
+            </div>
+
+            {plan.nextCheckInAt && (
+              <p className={`text-sm mb-4 ${new Date(plan.nextCheckInAt) <= new Date() ? 'text-amber-700 font-medium' : 'text-gray-600'}`}>
+                {new Date(plan.nextCheckInAt) <= new Date() ? '⏰ Check-in due — ' : 'Next check-in: '}
+                {new Date(plan.nextCheckInAt).toLocaleDateString()}
+                {new Date(plan.nextCheckInAt) <= new Date() && (
+                  <button onClick={openJoint} className="ml-2 underline text-teal-700">start a session to review</button>
+                )}
+              </p>
+            )}
+
+            {/* Recaps awaiting endorsement */}
+            {pending.map(r => (
+              <div key={r.id} className="border border-amber-200 bg-amber-50 rounded-md p-4 mb-4">
+                <div className="text-xs text-amber-700 font-medium mb-2">
+                  Session recap from {new Date(r.createdAt).toLocaleDateString()} — awaiting endorsement
+                  ({[r.endorsedByMe, r.endorsedByPartner].filter(Boolean).length}/2)
+                </div>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap mb-3">{r.summary}</p>
+                {r.agreements.length > 0 && (
+                  <ul className="text-sm text-gray-700 mb-3 space-y-1">
+                    {r.agreements.map(a => (
+                      <li key={a.id}>• {a.owner ? <strong>{a.owner}: </strong> : ''}{a.text}</li>
+                    ))}
+                  </ul>
+                )}
+                {r.endorsedByMe ? (
+                  <span className="text-sm text-green-700">You've endorsed this — waiting for {topic.partner.pseudonym}</span>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      await api.post(`/topics/${topic.id}/recaps/${r.id}/endorse`);
+                      load();
+                    }}
+                    className="bg-green-600 hover:bg-green-700 text-white text-sm py-1 px-3 rounded"
+                  >
+                    Endorse this recap
+                  </button>
+                )}
+              </div>
+            ))}
+
+            {/* Active agreements */}
+            {activeShared.length > 0 && (
+              <div className="mb-3">
+                <h3 className="text-sm font-semibold text-gray-700 mb-1">Our agreements</h3>
+                <ul className="text-sm text-gray-700 space-y-1">
+                  {activeShared.map(a => <li key={a.id}>✓ {a.text}</li>)}
+                </ul>
+              </div>
+            )}
+            {activePersonal.length > 0 && (
+              <div className="mb-3">
+                <h3 className="text-sm font-semibold text-gray-700 mb-1">Individual commitments</h3>
+                <ul className="text-sm text-gray-700 space-y-1">
+                  {activePersonal.map(a => <li key={a.id}>✓ <strong>{a.owner}:</strong> {a.text}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {/* Endorsed session notes */}
+            {endorsed.length > 0 && (
+              <details className="mt-2">
+                <summary className="text-sm text-gray-500 cursor-pointer">Past session notes ({endorsed.length})</summary>
+                {endorsed.map(r => (
+                  <div key={r.id} className="mt-2 text-sm text-gray-600">
+                    <div className="text-xs text-gray-400">{new Date(r.createdAt).toLocaleDateString()}</div>
+                    <p className="whitespace-pre-wrap">{r.summary}</p>
+                  </div>
+                ))}
+              </details>
+            )}
+          </div>
+        );
+      })()}
 
       {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
       <Link to="/topics" className="text-teal-600 hover:text-teal-800">← Back to Topics</Link>

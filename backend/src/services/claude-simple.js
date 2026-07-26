@@ -293,8 +293,74 @@ GUIDANCE FOR THIS JOINT SESSION:
   }
 }
 
+/**
+ * Generate a structured recap of a joint session.
+ * @param {string} topicTitle
+ * @param {Array<string>} participantNames
+ * @param {Array} history - full session message history (with sender info)
+ * @param {Array} summaries - [{name, content}] approved shared summaries
+ * @returns {Promise<{summary: string, agreements: string[], commitments: Array<{name: string, text: string}>, suggestedCheckInDays: number}|null>}
+ */
+async function generateSessionRecap(topicTitle, participantNames, history = [], summaries = []) {
+  if (!anthropic) return null;
+
+  const transcript = history
+    .slice(-60)
+    .map(msg => msg.isAi
+      ? `Coco: ${msg.content || msg.encryptedContent}`
+      : `${msg.sender?.pseudonym || 'participant'}: ${msg.content || msg.encryptedContent}`)
+    .join('\n');
+
+  const summaryText = summaries
+    .map(s => `${s.name}'s shared summary: ${s.content}`)
+    .join('\n');
+
+  const recapPrompt = `You are Coco, wrapping up a joint counseling session between ${participantNames.join(' and ')} on the topic "${topicTitle}".
+
+${summaryText}
+
+SESSION TRANSCRIPT:
+${transcript}
+
+Produce a wrap-up document as JSON with exactly this shape:
+{
+  "summary": "3-6 sentences: what was worked on, what each person expressed, and the common ground reached. Warm, neutral, first-person-plural where natural.",
+  "agreements": ["1-3 shared agreements, each concrete and checkable (who/what/when), phrased as 'We will...'"],
+  "commitments": [{"name": "<participant pseudonym>", "text": "one specific thing this person committed to, phrased as 'I will...'"}],
+  "suggestedCheckInDays": <7, 14, or 30 — how soon they should review how it's going>
+}
+
+Only include agreements and commitments that were actually discussed or clearly follow from the conversation. If the session didn't reach agreements, return an empty agreements array and gentle commitments about continuing the conversation. Respond with ONLY the JSON object — no markdown fences, no commentary.`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
+      messages: [{ role: 'user', content: recapPrompt }],
+      max_tokens: 1200
+    });
+    let text = extractText(response);
+    if (!text) return null;
+    // Tolerate accidental code fences
+    text = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    const parsed = JSON.parse(text);
+    if (typeof parsed.summary !== 'string') return null;
+    return {
+      summary: parsed.summary,
+      agreements: Array.isArray(parsed.agreements) ? parsed.agreements.filter(a => typeof a === 'string') : [],
+      commitments: Array.isArray(parsed.commitments)
+        ? parsed.commitments.filter(c => c && typeof c.name === 'string' && typeof c.text === 'string')
+        : [],
+      suggestedCheckInDays: Number.isInteger(parsed.suggestedCheckInDays) ? parsed.suggestedCheckInDays : 7
+    };
+  } catch (error) {
+    console.error('Error generating session recap:', error.message);
+    return null;
+  }
+}
+
 module.exports = {
   handleUserMessage,
   handlePrepSession,
-  handleJointSession
+  handleJointSession,
+  generateSessionRecap
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import api from '../../utils/api';
 import { RootState } from '../../store';
 import { sendMessage, fetchSession, fetchSessionById, messageReceived, clearSession } from '../../store/messageSlice';
 import { joinSession, leaveSession } from '../../utils/socket';
@@ -51,7 +52,9 @@ const TypingIndicator = () => (
 const ChatInterface: React.FC = () => {
   const [messageInput, setMessageInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  
+  const [wrappingUp, setWrappingUp] = useState(false);
+
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const messageEndRef = useRef<HTMLDivElement>(null);
   const { id: sessionIdParam } = useParams<{ id: string }>();
@@ -156,9 +159,30 @@ const ChatInterface: React.FC = () => {
                       .join(', ')}`}
             </h2>
             <p className="text-sm text-white/80">
+              {currentSession?.topic && `Topic: ${currentSession.topic.title} · `}
               {new Date(currentSession?.createdAt || Date.now()).toLocaleDateString()}
             </p>
           </div>
+          {currentSession?.type === 'joint' && currentSession?.topic && (
+            <button
+              onClick={async () => {
+                if (!currentSession?.id || wrappingUp) return;
+                setWrappingUp(true);
+                try {
+                  await api.post(`/sessions/${currentSession.id}/wrapup`);
+                  navigate(`/topics/${currentSession.topic!.id}`);
+                } catch (err: any) {
+                  alert(err.response?.data?.message || 'Could not wrap up the session yet');
+                } finally {
+                  setWrappingUp(false);
+                }
+              }}
+              disabled={wrappingUp}
+              className="ml-auto bg-white/20 hover:bg-white/30 disabled:opacity-50 text-white text-sm py-2 px-4 rounded"
+            >
+              {wrappingUp ? 'Coco is writing your recap…' : currentSession.recap ? 'View recap' : 'Wrap up session'}
+            </button>
+          )}
         </div>
       </div>
       

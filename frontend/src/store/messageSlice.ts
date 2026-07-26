@@ -20,6 +20,9 @@ interface Session {
   id: string;
   type: 'individual' | 'joint';
   createdAt: string;
+  topicId?: string | null;
+  topic?: { id: string; title: string } | null;
+  recap?: { id: string } | null;
   messages: Message[];
   participants: Array<{
     user: {
