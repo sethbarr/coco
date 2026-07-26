@@ -21,9 +21,9 @@ const MessageBubble = ({ message, userId }) => {
               : 'bg-gray-100 text-gray-800 rounded-bl-none'
         }`}
       >
-        {!isUser && !message.isAi && (
-          <div className="text-xs text-gray-500 mb-1">
-            {message.sender?.pseudonym}
+        {!isUser && (
+          <div className={`text-xs mb-1 ${message.isAi ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
+            {message.isAi ? 'Coco' : message.sender?.pseudonym}
           </div>
         )}
         <div className="whitespace-pre-wrap">{messageContent}</div>
@@ -107,9 +107,10 @@ const ChatInterface: React.FC = () => {
     setIsTyping(true);
     
     // @ts-ignore
-    dispatch(sendMessage({ 
-      content: messageInput, 
-      sessionId: currentSession.id 
+    dispatch(sendMessage({
+      content: messageInput,
+      sessionId: currentSession.id,
+      senderId: user?.id
     })).then(() => {
       // Hide typing indicator after response is received
       setIsTyping(false);

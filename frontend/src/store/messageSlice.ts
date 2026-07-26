@@ -70,7 +70,7 @@ export const fetchSessionById = createAsyncThunk(
 // Send a message
 export const sendMessage = createAsyncThunk(
   'messages/sendMessage',
-  async ({ content, sessionId }: { content: string; sessionId: string }, { rejectWithValue }) => {
+  async ({ content, sessionId }: { content: string; sessionId: string; senderId?: string }, { rejectWithValue }) => {
     try {
       const response = await api.post(`/messages`, { content, sessionId });
       return response.data;
@@ -79,6 +79,9 @@ export const sendMessage = createAsyncThunk(
     }
   }
 );
+
+const byTime = (a: Message, b: Message) =>
+  new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime();
 
 // Message Slice
 const messageSlice = createSlice({
@@ -92,6 +95,7 @@ const messageSlice = createSlice({
       const exists = state.currentSession.messages.some(m => m.id === action.payload.id);
       if (!exists) {
         state.currentSession.messages.push(action.payload);
+        state.currentSession.messages.sort(byTime);
       }
     },
     clearSession: (state) => {
@@ -127,11 +131,27 @@ const messageSlice = createSlice({
         state.error = action.payload as string;
       })
       // Send Message
-      .addCase(sendMessage.pending, (state) => {
+      .addCase(sendMessage.pending, (state, action) => {
         state.loading = true;
+        // Optimistic bubble: show the user's message immediately so it always
+        // appears before Coco's reply (which can arrive first via the socket)
+        if (state.currentSession) {
+          state.currentSession.messages.push({
+            id: `temp-${action.meta.requestId}`,
+            content: action.meta.arg.content,
+            encryptedContent: action.meta.arg.content,
+            senderId: action.meta.arg.senderId || '',
+            isAi: false,
+            sentAt: new Date().toISOString(),
+          });
+        }
       })
       .addCase(sendMessage.fulfilled, (state, action) => {
         if (state.currentSession) {
+          // Replace the optimistic bubble with the server-confirmed messages
+          state.currentSession.messages = state.currentSession.messages.filter(
+            m => m.id !== `temp-${action.meta.requestId}`
+          );
           const push = (msg: any) => {
             if (msg && !state.currentSession!.messages.some(m => m.id === msg.id)) {
               state.currentSession!.messages.push(msg);
@@ -139,11 +159,17 @@ const messageSlice = createSlice({
           };
           push(action.payload.userMessage);
           push(action.payload.aiMessage);
+          state.currentSession.messages.sort(byTime);
         }
         state.loading = false;
         state.error = null;
       })
       .addCase(sendMessage.rejected, (state, action) => {
+        if (state.currentSession) {
+          state.currentSession.messages = state.currentSession.messages.filter(
+            m => m.id !== `temp-${action.meta.requestId}`
+          );
+        }
         state.loading = false;
         state.error = action.payload as string;
       });
