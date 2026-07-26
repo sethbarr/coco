@@ -19,7 +19,7 @@ import { loadUser } from './store/authSlice';
 
 const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { isAuthenticated, loading, user } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, loading } = useSelector((state: RootState) => state.auth);
   
   useEffect(() => {
     const token = localStorage.getItem('token');

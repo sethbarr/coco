@@ -89,7 +89,7 @@ export const removeConnection = createAsyncThunk(
   'connections/removeConnection',
   async (connectionId: string, { rejectWithValue }) => {
     try {
-      const response = await api.delete(`/connections/${connectionId}`);
+      await api.delete(`/connections/${connectionId}`);
       return connectionId; // Return the ID to remove from state
     } catch (err: any) {
       return rejectWithValue(err.response.data.msg || 'Failed to remove connection');
