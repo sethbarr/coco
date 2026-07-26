@@ -14,6 +14,10 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 
+// Behind Railway's proxy: trust the first X-Forwarded-For hop so
+// express-rate-limit and req.ip see the real client address
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
