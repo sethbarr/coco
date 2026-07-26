@@ -1,0 +1,19 @@
+// Add this model to your schema.prisma file
+model SecurityEvent {
+  id         String   @id @default(uuid())
+  userId     String
+  eventType  String
+  metadata   Json
+  createdAt  DateTime @default(now())
+  
+  // Relationship
+  user       User     @relation("UserSecurityEvents", fields: [userId], references: [id])
+}
+
+// Also update the User model to include the relation
+model User {
+  // ... existing fields
+  
+  // Add this line to the relationships
+  securityEvents SecurityEvent[] @relation("UserSecurityEvents")
+}

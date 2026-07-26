@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // Make sure this points to your Supabase DB
+  directUrl = env("DIRECT_URL")   // For migrations if needed
 }
 
 model RefreshToken {
@@ -41,6 +42,8 @@ model User {
   participatedSessions SessionParticipant[]
   messages Message[] @relation("SenderMessages")
   refreshTokens RefreshToken[] @relation("UserRefreshTokens")
+  securityEvents SecurityEvent[] @relation("UserSecurityEvents")
+
 }
 
 model Connection {
@@ -96,4 +99,15 @@ model Message {
   // Relationships
   session            Session  @relation(fields: [sessionId], references: [id])
   sender             User     @relation("SenderMessages", fields: [senderId], references: [id])
+}
+
+model SecurityEvent {
+  id         String   @id @default(uuid())
+  userId     String
+  eventType  String
+  metadata   Json
+  createdAt  DateTime @default(now())
+  
+  // Relationship
+  user       User     @relation("UserSecurityEvents", fields: [userId], references: [id])
 }

@@ -8,24 +8,17 @@ dotenv.config();
 
 // Initialize Anthropic client
 let anthropic;
-let useV2API = false;
 
 try {
   anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY
   });
   console.log('Anthropic client initialized successfully');
-  
-  // Check which API version we need to use
-  if (!anthropic.messages || typeof anthropic.messages.create !== 'function') {
-    console.log('Cannot find messages API, using older completions API');
-    useV2API = true;
-  } else {
-    console.log('Using newer messages API');
-  }
 } catch (error) {
   console.error('Failed to initialize Anthropic client:', error.message);
 }
+
+const CLAUDE_MODEL = 'claude-sonnet-5';
 
 // Base system prompt
 const BASE_SYSTEM_PROMPT = `You are Coco, a supportive AI counselor who helps individuals and couples improve their relationships. You are NOT a therapist or healthcare provider. Your role is similar to a thoughtful, unbiased friend who helps people communicate better.
@@ -114,49 +107,16 @@ async function handleUserMessage(message, history = []) {
     });
     
     console.log(`Calling Claude API with ${processedMessages.length} messages in context`);
-    
-    let aiResponse;
-    
-    if (useV2API) {
-      // Use older API (completions)
-      let prompt = `${BASE_SYSTEM_PROMPT}\n\n`;
-      
-      // Add conversation history
-      for (const msg of processedMessages) {
-        if (msg.role === 'user') {
-          prompt += `\n\nHuman: ${msg.content}`;
-        } else {
-          prompt += `\n\nAssistant: ${msg.content}`;
-        }
-      }
-      
-      // Add final assistant prompt
-      prompt += '\n\nAssistant:';
-      
-      console.log('Using V2 API with prompt format');
-      
-      // We need to use a Claude-2 model with the completions API
-      const response = await anthropic.completions.create({
-        model: "claude-2",
-        prompt: prompt,
-        max_tokens_to_sample: 1000,
-        temperature: 0.7
-      });
-      
-      aiResponse = response.completion.trim();
-    } else {
-      // Use newer messages API
-      const response = await anthropic.messages.create({
-        model: "claude-3-opus-20240229",
-        system: BASE_SYSTEM_PROMPT,
-        messages: processedMessages,
-        max_tokens: 1000,
-        temperature: 0.7
-      });
-      
-      aiResponse = response.content[0].text;
-    }
-    
+
+    const response = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
+      system: BASE_SYSTEM_PROMPT,
+      messages: processedMessages,
+      max_tokens: 1000
+    });
+
+    const aiResponse = response.content[0].text;
+
     console.log('Claude API response received');
     
     // Return the response text

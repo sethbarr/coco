@@ -259,11 +259,10 @@ async function handleUserMessage(message, history = []) {
     try {
       console.log('Attempting to call Claude API...');
       const response = await anthropic.messages.create({
-        model: "claude-3-opus-20240229",
+        model: "claude-sonnet-5",
         system: systemPrompt,
         messages: messages,
-        max_tokens: 1000,
-        temperature: 0.7
+        max_tokens: 1000
       });
       
       console.log('Claude API response received:', response.content[0].text.substring(0, 50) + '...');
@@ -320,11 +319,10 @@ async function handleJointSession(message, senderId, participants, history = [])
     
     // Call the Claude API with appropriate parameters
     const response = await anthropic.messages.create({
-      model: "claude-3-opus-20240229",
+      model: "claude-sonnet-5",
       system: systemPrompt,
       messages: messages,
-      max_tokens: 1500,
-      temperature: 0.7
+      max_tokens: 1500
     });
     
     const aiResponse = response.content[0].text;

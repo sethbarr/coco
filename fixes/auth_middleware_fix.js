@@ -92,20 +92,23 @@ async function invalidateRefreshTokens(userId, userAgent) {
       }
     });
     
-    // Optionally, record security event
-    // await prisma.securityEvent.create({
-    //   data: {
-    //     userId,
-    //     eventType: 'potential_token_theft',
-    //     metadata: {
-    //       userAgent,
-    //       timestamp: new Date()
-    //     }
-    //   }
-    // });
+    // Comment out or remove the security event creation since the model doesn't exist yet
+    // If you've added the SecurityEvent model to your schema, you can uncomment this
+    /*
+    await prisma.securityEvent.create({
+      data: {
+        userId,
+        eventType: 'potential_token_theft',
+        metadata: {
+          userAgent,
+          timestamp: new Date()
+        }
+      }
+    });
+    */
+    
     // Log the event instead
-console.warn(`Potential token theft detected for user ${userId} with user agent ${userAgent}`);
-
+    console.warn(`Potential token theft detected for user ${userId} with user agent ${userAgent}`);
   } catch (error) {
     console.error('Error invalidating refresh tokens:', error);
   }
