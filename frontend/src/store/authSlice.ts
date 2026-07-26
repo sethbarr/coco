@@ -19,7 +19,9 @@ interface AuthState {
 const initialState: AuthState = {
   token: localStorage.getItem('token'),
   isAuthenticated: false,
-  loading: true,
+  // Only start in a loading state if there's a stored token to verify;
+  // otherwise nothing will ever clear it and auth-gated UI hangs forever
+  loading: !!localStorage.getItem('token'),
   user: null,
   error: null,
 };
@@ -140,9 +142,10 @@ const authSlice = createSlice({
         state.loading = true;
       })
       .addCase(loadUser.fulfilled, (state, action) => {
-        state.isAuthenticated = true;
+        // loadUser resolves with {id: null} when there was no token to verify
+        state.isAuthenticated = !!action.payload?.id;
         state.loading = false;
-        state.user = action.payload;
+        state.user = action.payload?.id ? action.payload : null;
       })
       .addCase(loadUser.rejected, (state) => {
         state.token = null;
