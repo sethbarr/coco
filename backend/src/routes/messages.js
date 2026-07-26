@@ -7,6 +7,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { handleUserMessage, handleJointSession } = require('../services/claude-simple');
 const auth = require('../middleware/auth');
+const { getIO } = require('../socket');
 
 // Middleware to check if user is authenticated
 router.use(auth);
@@ -84,8 +85,9 @@ router.post('/', async (req, res) => {
         // For joint sessions, get the sender's name
         const sender = session.participants.find(p => p.user.id === userId);
         const senderName = sender.user.pseudonym;
-        
-        aiResponse = await handleJointSession(content, senderName, messageHistory);
+        const participantNames = session.participants.map(p => p.user.pseudonym);
+
+        aiResponse = await handleJointSession(content, senderName, participantNames, messageHistory);
       }
       
       console.log('AI Response received:', aiResponse ? aiResponse.substring(0, 50) + '...' : 'No response');
@@ -94,43 +96,37 @@ router.post('/', async (req, res) => {
       return res.status(500).json({ message: 'Failed to get AI response', error: error.message });
     }
 
-    // Store or encrypt the AI response for each participant
-    const aiMessages = await Promise.all(
-      session.participants.map(async (participant) => {
-        // In a real implementation with actual E2E encryption, each user would
-        // have their own encrypted version. For this simplified version,
-        // we're just storing the same response for each user but with metadata
-        // that indicates which user it's for.
-        
-        return prisma.message.create({
-          data: {
-            sessionId,
-            senderId: userId, // AI messages associated with the user who triggered them
-            isAi: true,
-            encryptedContent: aiResponse, // For demo purposes, storing actual content
-            encryptionMetadata: {
-              forUserId: participant.user.id,
-              timestamp: new Date().toISOString()
-            }
-          }
-        });
-      })
-    );
+    // Store a single AI message visible to all participants
+    const aiMessage = await prisma.message.create({
+      data: {
+        sessionId,
+        senderId: userId, // AI messages associated with the user who triggered them
+        isAi: true,
+        encryptedContent: aiResponse,
+        encryptionMetadata: {
+          timestamp: new Date().toISOString()
+        }
+      }
+    });
 
-    // Find the AI message for the current user
-    const userAiMessage = aiMessages.find(msg => 
-      msg.encryptionMetadata.forUserId === userId
-    );
+    const sender = session.participants.find(p => p.user.id === userId);
+    const userMessagePayload = {
+      ...userMessage,
+      content,
+      sender: { id: userId, pseudonym: sender?.user.pseudonym }
+    };
+    const aiMessagePayload = { ...aiMessage, content: aiResponse };
+
+    // Broadcast to everyone else viewing this session
+    const io = getIO();
+    if (io) {
+      io.to(sessionId).emit('message:new', userMessagePayload);
+      io.to(sessionId).emit('message:new', aiMessagePayload);
+    }
 
     return res.status(201).json({
-      userMessage: {
-        ...userMessage,
-        content: content // Send plaintext content to display
-      },
-      aiMessage: {
-        ...userAiMessage,
-        content: aiResponse // Send plaintext content to display
-      }
+      userMessage: userMessagePayload,
+      aiMessage: aiMessagePayload
     });
   } catch (error) {
     console.error('Error sending message:', error);
@@ -162,22 +158,9 @@ router.get('/:sessionId', async (req, res) => {
       return res.status(403).json({ message: 'User is not a participant in this session' });
     }
 
-    // Get messages for the session where the user is either the sender or the intended recipient
+    // All messages in the session (AI messages are shared by all participants)
     const messages = await prisma.message.findMany({
-      where: { 
-        sessionId,
-        OR: [
-          { isAi: false }, // All non-AI messages in the session
-          { 
-            isAi: true,
-            // Use JSON path query to find AI messages for this user
-            encryptionMetadata: {
-              path: ['forUserId'],
-              equals: userId
-            }
-          } 
-        ]
-      },
+      where: { sessionId },
       orderBy: { sentAt: 'asc' },
       include: {
         sender: {

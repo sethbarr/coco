@@ -20,6 +20,15 @@ try {
 
 const CLAUDE_MODEL = 'claude-sonnet-5';
 
+/**
+ * Extract the assistant's text from a response. With adaptive thinking the
+ * first content block can be a thinking block, so find the text block.
+ */
+function extractText(response) {
+  const textBlock = response.content.find(block => block.type === 'text');
+  return textBlock ? textBlock.text : null;
+}
+
 // Base system prompt
 const BASE_SYSTEM_PROMPT = `You are Coco, a supportive AI counselor who helps individuals and couples improve their relationships. You are NOT a therapist or healthcare provider. Your role is similar to a thoughtful, unbiased friend who helps people communicate better.
 
@@ -115,7 +124,11 @@ async function handleUserMessage(message, history = []) {
       max_tokens: 1000
     });
 
-    const aiResponse = response.content[0].text;
+    const aiResponse = extractText(response);
+    if (!aiResponse) {
+      console.error('No text block in Claude response');
+      return generateFallbackResponse();
+    }
 
     console.log('Claude API response received');
     
@@ -132,21 +145,61 @@ async function handleUserMessage(message, history = []) {
 }
 
 /**
- * Simplified joint session handler
+ * Joint session handler — Coco facilitates a conversation between partners.
  * @param {string} message - The user's message
- * @param {string} senderName - Name of the sender
- * @param {Array} history - Message history
+ * @param {string} senderName - Pseudonym of the sender
+ * @param {Array<string>} participantNames - Pseudonyms of all participants
+ * @param {Array} history - Message history (with sender info)
  * @returns {Promise<string>} - Claude's response
  */
-async function handleJointSession(message, senderName, history = []) {
-  // This is a simplified version - in a complete implementation,
-  // you would include additional context about all participants
-  
-  // Prefix the message with the sender's name
-  const prefixedMessage = `[${senderName}]: ${message}`;
-  
-  // Use the standard message handler with the prefixed message
-  return handleUserMessage(prefixedMessage, history);
+async function handleJointSession(message, senderName, participantNames = [], history = []) {
+  if (!anthropic) {
+    console.error('Anthropic client not initialized');
+    return generateFallbackResponse();
+  }
+
+  const names = participantNames.join(' and ');
+  const jointSystemPrompt = `${BASE_SYSTEM_PROMPT}
+
+GUIDANCE FOR THIS JOINT SESSION:
+- You are facilitating a live conversation between ${names}. Messages from participants are prefixed with their name in brackets, e.g. [name]: message.
+- Ensure both parties have equal opportunity to express themselves; if one has been quiet, gently invite them in.
+- Reflect back and reframe charged statements neutrally; highlight miscommunications when you notice them.
+- Look for common ground and shared goals; suggest brief communication exercises when helpful.
+- Remain completely neutral. Never take sides.
+- Do not reference anything from either person's individual sessions.`;
+
+  try {
+    const recentHistory = history.slice(-10);
+    const processedMessages = recentHistory.map(msg => ({
+      role: msg.isAi ? 'assistant' : 'user',
+      content: msg.isAi
+        ? (msg.content || msg.encryptedContent)
+        : `[${msg.sender?.pseudonym || 'participant'}]: ${msg.content || msg.encryptedContent}`
+    }));
+
+    processedMessages.push({
+      role: 'user',
+      content: `[${senderName}]: ${message}`
+    });
+
+    const response = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
+      system: jointSystemPrompt,
+      messages: processedMessages,
+      max_tokens: 1000
+    });
+
+    const aiResponse = extractText(response);
+    if (!aiResponse) {
+      console.error('No text block in Claude joint response');
+      return generateFallbackResponse();
+    }
+    return aiResponse;
+  } catch (error) {
+    console.error('Error calling Claude API for joint session:', error.message);
+    return generateFallbackResponse();
+  }
 }
 
 module.exports = {

@@ -1,8 +1,10 @@
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const { PrismaClient } = require('@prisma/client');
+const socket = require('./socket');
 
 // Load environment variables
 dotenv.config();
@@ -33,9 +35,11 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something went wrong!');
 });
 
-// Start server
+// Start server with Socket.IO attached
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+const server = http.createServer(app);
+socket.init(server);
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 

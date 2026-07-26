@@ -265,9 +265,8 @@ async function handleUserMessage(message, history = []) {
         max_tokens: 1000
       });
       
-      console.log('Claude API response received:', response.content[0].text.substring(0, 50) + '...');
-      
-      const aiResponse = response.content[0].text;
+      const aiResponse = response.content.find(b => b.type === 'text')?.text;
+      console.log('Claude API response received:', aiResponse ? aiResponse.substring(0, 50) + '...' : 'no text block');
       
       // Validate the response
       if (!validateResponse(aiResponse)) {
@@ -325,8 +324,8 @@ async function handleJointSession(message, senderId, participants, history = [])
       max_tokens: 1500
     });
     
-    const aiResponse = response.content[0].text;
-    
+    const aiResponse = response.content.find(b => b.type === 'text')?.text;
+
     // Validate the response
     if (!validateResponse(aiResponse)) {
       logger.error('Generated an invalid AI response for joint session');

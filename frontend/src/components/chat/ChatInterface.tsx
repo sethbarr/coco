@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useParams } from 'react-router-dom';
 import { RootState } from '../../store';
-import { sendMessage, fetchSession } from '../../store/messageSlice';
+import { sendMessage, fetchSession, fetchSessionById, messageReceived, clearSession } from '../../store/messageSlice';
+import { joinSession, leaveSession } from '../../utils/socket';
 
 // Message Bubble Component
 const MessageBubble = ({ message, userId }) => {
@@ -52,15 +54,38 @@ const ChatInterface: React.FC = () => {
   
   const dispatch = useDispatch();
   const messageEndRef = useRef<HTMLDivElement>(null);
-  
+  const { id: sessionIdParam } = useParams<{ id: string }>();
+
   const { user } = useSelector((state: RootState) => state.auth);
   const { currentSession, loading } = useSelector((state: RootState) => state.messages);
-  
+
   useEffect(() => {
-    // Fetch or create a session
-    // @ts-ignore
-    dispatch(fetchSession());
-  }, [dispatch]);
+    // /sessions/:id loads that session; /chat loads (or creates) the individual session
+    dispatch(clearSession());
+    if (sessionIdParam) {
+      // @ts-ignore
+      dispatch(fetchSessionById(sessionIdParam));
+    } else {
+      // @ts-ignore
+      dispatch(fetchSession());
+    }
+  }, [dispatch, sessionIdParam]);
+
+  useEffect(() => {
+    // Live updates: join the session room and append incoming messages
+    if (!currentSession?.id) return;
+    const socket = joinSession(currentSession.id);
+    const onMessage = (message: any) => {
+      // Skip our own messages — they're added by the sendMessage thunk
+      if (!message.isAi && message.senderId === user?.id) return;
+      dispatch(messageReceived(message));
+    };
+    socket.on('message:new', onMessage);
+    return () => {
+      socket.off('message:new', onMessage);
+      leaveSession(currentSession.id);
+    };
+  }, [currentSession?.id, dispatch, user?.id]);
   
   useEffect(() => {
     // Scroll to bottom on new messages

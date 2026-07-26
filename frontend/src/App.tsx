@@ -10,6 +10,8 @@ import SimpleLoginPage from './components/auth/SimpleLoginPage';
 import SignupPage from './components/auth/SignupPage';
 import Dashboard from './components/Dashboard';
 import ChatInterface from './components/chat/ChatInterface';
+import ConnectionsPage from './components/connections/ConnectionsPage';
+import SessionsPage from './components/sessions/SessionsPage';
 import Debug from './components/Debug';
 import { loadUser } from './store/authSlice';
 
@@ -118,26 +120,12 @@ const App: React.FC = () => {
           } />
           <Route path="/sessions" element={
             <ProtectedRoute>
-              <div className="max-w-4xl mx-auto">
-                <h1 className="text-3xl font-bold text-gray-900 mb-6">All Sessions</h1>
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  {/* This would normally render a list of all sessions */}
-                  <p className="text-gray-500 mb-4">To be implemented: Display all sessions here</p>
-                  <Link to="/dashboard" className="text-teal-600 hover:text-teal-800">← Back to Dashboard</Link>
-                </div>
-              </div>
+              <SessionsPage />
             </ProtectedRoute>
           } />
           <Route path="/connections" element={
             <ProtectedRoute>
-              <div className="max-w-4xl mx-auto">
-                <h1 className="text-3xl font-bold text-gray-900 mb-6">My Connections</h1>
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  {/* This would normally render connections management UI */}
-                  <p className="text-gray-500 mb-4">To be implemented: Display connections management here</p>
-                  <Link to="/dashboard" className="text-teal-600 hover:text-teal-800">← Back to Dashboard</Link>
-                </div>
-              </div>
+              <ConnectionsPage />
             </ProtectedRoute>
           } />
         </Routes>
