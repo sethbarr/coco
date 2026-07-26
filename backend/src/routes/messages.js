@@ -5,7 +5,7 @@ const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { handleUserMessage, handleJointSession } = require('../services/claude-simple');
+const { handleUserMessage, handlePrepSession, handleJointSession } = require('../services/claude-simple');
 const auth = require('../middleware/auth');
 const { getIO } = require('../socket');
 
@@ -34,6 +34,13 @@ router.post('/', async (req, res) => {
                 pseudonym: true,
                 publicKey: true
               }
+            }
+          }
+        },
+        topic: {
+          include: {
+            summaries: {
+              include: { user: { select: { id: true, pseudonym: true } } }
             }
           }
         }
@@ -79,15 +86,29 @@ router.post('/', async (req, res) => {
     try {
       // Handle based on session type
       if (session.type === 'individual') {
-        // For individual sessions, just send the content to Claude
-        aiResponse = await handleUserMessage(content, messageHistory);
+        if (session.topic) {
+          // Guided private prep for a named topic
+          aiResponse = await handlePrepSession(content, messageHistory, session.topic.title);
+        } else {
+          aiResponse = await handleUserMessage(content, messageHistory);
+        }
       } else if (session.type === 'joint') {
-        // For joint sessions, get the sender's name
         const sender = session.participants.find(p => p.user.id === userId);
         const senderName = sender.user.pseudonym;
         const participantNames = session.participants.map(p => p.user.pseudonym);
 
-        aiResponse = await handleJointSession(content, senderName, participantNames, messageHistory);
+        // Topic-based joint sessions brief Coco with both approved summaries
+        let briefing = null;
+        if (session.topic) {
+          briefing = {
+            topicTitle: session.topic.title,
+            summaries: session.topic.summaries
+              .filter(s => s.approvedAt)
+              .map(s => ({ name: s.user.pseudonym, content: s.content }))
+          };
+        }
+
+        aiResponse = await handleJointSession(content, senderName, participantNames, messageHistory, briefing);
       }
       
       console.log('AI Response received:', aiResponse ? aiResponse.substring(0, 50) + '...' : 'No response');

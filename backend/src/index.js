@@ -28,6 +28,7 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/sessions', require('./routes/sessions'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/connections', require('./routes/connections'));
+app.use('/api/topics', require('./routes/topics'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

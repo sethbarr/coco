@@ -12,6 +12,8 @@ import Dashboard from './components/Dashboard';
 import ChatInterface from './components/chat/ChatInterface';
 import ConnectionsPage from './components/connections/ConnectionsPage';
 import SessionsPage from './components/sessions/SessionsPage';
+import TopicsPage from './components/topics/TopicsPage';
+import TopicDetailPage from './components/topics/TopicDetailPage';
 import Debug from './components/Debug';
 import { loadUser } from './store/authSlice';
 
@@ -48,6 +50,8 @@ const App: React.FC = () => {
             ) : (
               <>
                 <Link to="/dashboard" className="text-teal-600 hover:text-teal-800 mr-4">Dashboard</Link>
+                <Link to="/topics" className="text-teal-600 hover:text-teal-800 mr-4">Topics</Link>
+                <Link to="/connections" className="text-teal-600 hover:text-teal-800 mr-4">Connections</Link>
                 <button 
                   className="text-teal-600 hover:text-teal-800"
                   onClick={async () => {
@@ -126,6 +130,16 @@ const App: React.FC = () => {
           <Route path="/connections" element={
             <ProtectedRoute>
               <ConnectionsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/topics" element={
+            <ProtectedRoute>
+              <TopicsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/topics/:id" element={
+            <ProtectedRoute>
+              <TopicDetailPage />
             </ProtectedRoute>
           } />
         </Routes>

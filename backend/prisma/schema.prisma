@@ -43,6 +43,8 @@ model User {
   messages Message[] @relation("SenderMessages")
   refreshTokens RefreshToken[] @relation("UserRefreshTokens")
   securityEvents SecurityEvent[] @relation("UserSecurityEvents")
+  createdTopics Topic[] @relation("TopicCreator")
+  sharedSummaries SharedSummary[] @relation("UserSummaries")
 
 }
 
@@ -54,23 +56,58 @@ model Connection {
   status           String     // 'pending', 'active', 'declined'
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
-  
+
   // Relationships
   creator          User       @relation("CreatorConnections", fields: [creatorId], references: [id])
   recipient        User       @relation("RecipientConnections", fields: [recipientId], references: [id])
+  topics           Topic[]
 
   @@unique([creatorId, recipientId])
 }
 
+model Topic {
+  id           String   @id @default(uuid())
+  title        String
+  connectionId String
+  createdById  String
+  status       String   @default("prep") // 'prep', 'joint_ready', 'closed'
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relationships
+  connection Connection      @relation(fields: [connectionId], references: [id])
+  createdBy  User            @relation("TopicCreator", fields: [createdById], references: [id])
+  summaries  SharedSummary[]
+  sessions   Session[]
+}
+
+model SharedSummary {
+  id         String    @id @default(uuid())
+  topicId    String
+  userId     String
+  content    String
+  approvedAt DateTime? // null = draft; editing clears approval
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relationships
+  topic Topic @relation(fields: [topicId], references: [id])
+  user  User  @relation("UserSummaries", fields: [userId], references: [id])
+
+  @@unique([topicId, userId])
+}
+
 model Session {
-  id         String     @id @default(uuid())
-  type       String     // 'individual' or 'joint'
+  id          String    @id @default(uuid())
+  type        String    // 'individual' or 'joint'
   createdById String
-  createdAt  DateTime   @default(now())
-  endedAt    DateTime?
-  
+  topicId     String?   // set when this session is part of a guided topic
+  createdAt   DateTime  @default(now())
+  endedAt     DateTime?
+
   // Relationships
   createdBy  User       @relation("CreatedBy", fields: [createdById], references: [id])
+  topic      Topic?     @relation(fields: [topicId], references: [id])
   participants SessionParticipant[]
   messages   Message[]
 }
