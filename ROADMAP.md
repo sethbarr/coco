@@ -6,14 +6,14 @@ The product's spine is the **guided cycle**: prep → consent-gated summaries �
 
 ---
 
-## Phase 1 — Close the accountability loop *(next up)*
+## Phase 1 — Close the accountability loop ✅ *(shipped July 26, 2026)*
 
 The wrap-up produces agreements and a check-in date; nothing yet happens when that date arrives.
 
-- **Check-in sessions** — a joint session flavor where Coco is briefed with the active agreements and last check-in, and runs the review: *what worked / what didn't / keep, adjust, or retire* — hearing each partner in turn. Agreement statuses (kept / struggling / retired) update only here, with both present.
-- **Private reflection sessions** — between check-ins, either partner can talk to Coco about how the agreements are going, in private. Coco knows the agreements and helps them decide what to bring to the next check-in.
-- **Agreement lifecycle on the topic page** — status chips, history, "retired because it worked" celebration; topic can be marked resolved.
-- **In-app notifications** — the two-person flow stalls silently today. Badge/inbox for: invited to connect, new topic, partner approved summary, joint ready, recap awaiting your endorsement, check-in due.
+- ✅ **Check-in sessions** — a joint session flavor where Coco is briefed with the active agreements and last check-in, and runs the review: *what worked / what didn't / keep, adjust, or retire* — hearing each partner in turn. Agreement statuses (kept / struggling / retired) update only here, with both present.
+- ✅ **Private reflection sessions** — between check-ins, either partner can talk to Coco about how the agreements are going, in private. Coco knows the agreements and helps them decide what to bring to the next check-in.
+- ✅ **Agreement lifecycle on the topic page** — status chips, proposed-changes preview on recaps, retired history. *(Still open: explicit "topic resolved" state.)*
+- ✅ **In-app notifications** — live bell with unread badge; fires on invite, accept, new topic, summary approved, joint ready, check-in started, recap awaiting endorsement, plan active. *(Check-in-due shows as a banner on the topic page rather than a notification row.)*
 
 ## Phase 2 — Trust & safety *(before inviting real couples)*
 
@@ -54,8 +54,8 @@ The wrap-up produces agreements and a check-in date; nothing yet happens when th
 
 ## Suggested order of attack
 
-1. Check-in sessions + agreement lifecycle (completes the core value loop)
-2. In-app notifications (makes the two-person flow actually flow)
+1. ~~Check-in sessions + agreement lifecycle~~ ✅
+2. ~~In-app notifications~~ ✅
 3. Crisis escalation + safety screen (unlocks inviting real users)
 4. Account recovery + Sentry + backups (don't lose people's data or trust)
-5. Private reflections, exercises, streaming (deepen)
+5. Exercises, streaming, PWA (deepen)
