@@ -14,6 +14,7 @@ interface PlanRecap {
   id: string;
   summary: string;
   createdAt: string;
+  statusUpdates?: Array<{ status: string; text: string | null }>;
   suggestedCheckInDays: number | null;
   endorsedByMe: boolean;
   endorsedByPartner: boolean;
@@ -127,6 +128,44 @@ const TopicDetailPage: React.FC = () => {
     }
   };
 
+  const startCheckin = async () => {
+    setBusy(true);
+    try {
+      const res = await api.post(`/topics/${topic.id}/checkin`);
+      navigate(`/sessions/${res.data.sessionId}`);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to start check-in');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const startReflection = async () => {
+    setBusy(true);
+    try {
+      const res = await api.post(`/topics/${topic.id}/reflect`);
+      navigate(`/sessions/${res.data.sessionId}`);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to open reflection');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const statusChip = (status: string) => {
+    const styles: Record<string, string> = {
+      active: 'bg-blue-100 text-blue-700',
+      kept: 'bg-green-100 text-green-700',
+      struggling: 'bg-amber-100 text-amber-700',
+      retired: 'bg-gray-100 text-gray-500',
+    };
+    return (
+      <span className={`text-xs px-2 py-0.5 rounded-full ml-2 ${styles[status] || 'bg-gray-100 text-gray-500'}`}>
+        {status}
+      </span>
+    );
+  };
+
   return (
     <div className="max-w-3xl mx-auto">
       <div className="mb-6">
@@ -230,8 +269,10 @@ const TopicDetailPage: React.FC = () => {
       {/* Our Plan */}
       {plan && plan.recaps.length > 0 && (() => {
         const endorsed = plan.recaps.filter(r => r.fullyEndorsed);
-        const activeShared = endorsed.flatMap(r => r.agreements).filter(a => a.status === 'active' && !a.owner);
-        const activePersonal = endorsed.flatMap(r => r.agreements).filter(a => a.status === 'active' && a.owner);
+        const live = (a: PlanAgreement) => ['active', 'kept', 'struggling'].includes(a.status);
+        const activeShared = endorsed.flatMap(r => r.agreements).filter(a => live(a) && !a.owner);
+        const activePersonal = endorsed.flatMap(r => r.agreements).filter(a => live(a) && a.owner);
+        const retired = endorsed.flatMap(r => r.agreements).filter(a => a.status === 'retired');
         const pending = plan.recaps.filter(r => !r.fullyEndorsed);
         return (
           <div className="bg-white rounded-lg shadow-md p-6 mb-4 border-t-4 border-blue-400">
@@ -260,7 +301,7 @@ const TopicDetailPage: React.FC = () => {
                 {new Date(plan.nextCheckInAt) <= new Date() ? '⏰ Check-in due — ' : 'Next check-in: '}
                 {new Date(plan.nextCheckInAt).toLocaleDateString()}
                 {new Date(plan.nextCheckInAt) <= new Date() && (
-                  <button onClick={openJoint} className="ml-2 underline text-teal-700">start a session to review</button>
+                  <button onClick={startCheckin} className="ml-2 underline text-teal-700">start your check-in</button>
                 )}
               </p>
             )}
@@ -273,12 +314,25 @@ const TopicDetailPage: React.FC = () => {
                   ({[r.endorsedByMe, r.endorsedByPartner].filter(Boolean).length}/2)
                 </div>
                 <p className="text-sm text-gray-700 whitespace-pre-wrap mb-3">{r.summary}</p>
+                {(r.statusUpdates?.length || 0) > 0 && (
+                  <div className="mb-3">
+                    <div className="text-xs font-medium text-gray-600 mb-1">Proposed status changes:</div>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      {r.statusUpdates!.map((u, i) => (
+                        <li key={i}>→ {u.text || 'an agreement'} {statusChip(u.status)}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 {r.agreements.length > 0 && (
-                  <ul className="text-sm text-gray-700 mb-3 space-y-1">
-                    {r.agreements.map(a => (
-                      <li key={a.id}>• {a.owner ? <strong>{a.owner}: </strong> : ''}{a.text}</li>
-                    ))}
-                  </ul>
+                  <div className="mb-3">
+                    <div className="text-xs font-medium text-gray-600 mb-1">New agreements:</div>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      {r.agreements.map(a => (
+                        <li key={a.id}>• {a.owner ? <strong>{a.owner}: </strong> : ''}{a.text}</li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
                 {r.endorsedByMe ? (
                   <span className="text-sm text-green-700">You've endorsed this — waiting for {topic.partner.pseudonym}</span>
@@ -301,7 +355,7 @@ const TopicDetailPage: React.FC = () => {
               <div className="mb-3">
                 <h3 className="text-sm font-semibold text-gray-700 mb-1">Our agreements</h3>
                 <ul className="text-sm text-gray-700 space-y-1">
-                  {activeShared.map(a => <li key={a.id}>✓ {a.text}</li>)}
+                  {activeShared.map(a => <li key={a.id}>{a.text}{statusChip(a.status)}</li>)}
                 </ul>
               </div>
             )}
@@ -309,8 +363,36 @@ const TopicDetailPage: React.FC = () => {
               <div className="mb-3">
                 <h3 className="text-sm font-semibold text-gray-700 mb-1">Individual commitments</h3>
                 <ul className="text-sm text-gray-700 space-y-1">
-                  {activePersonal.map(a => <li key={a.id}>✓ <strong>{a.owner}:</strong> {a.text}</li>)}
+                  {activePersonal.map(a => <li key={a.id}><strong>{a.owner}:</strong> {a.text}{statusChip(a.status)}</li>)}
                 </ul>
+              </div>
+            )}
+
+            {retired.length > 0 && (
+              <details className="mb-3">
+                <summary className="text-sm text-gray-400 cursor-pointer">Retired agreements ({retired.length})</summary>
+                <ul className="text-sm text-gray-400 space-y-1 mt-1">
+                  {retired.map(a => <li key={a.id} className="line-through">{a.owner ? `${a.owner}: ` : ''}{a.text}</li>)}
+                </ul>
+              </details>
+            )}
+
+            {endorsed.length > 0 && (
+              <div className="flex gap-2 mb-3">
+                <button
+                  onClick={startCheckin}
+                  disabled={busy}
+                  className="bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-sm py-2 px-4 rounded"
+                >
+                  {topic.checkinSessionId ? 'Rejoin check-in' : 'Start a check-in'}
+                </button>
+                <button
+                  onClick={startReflection}
+                  disabled={busy}
+                  className="bg-gray-600 hover:bg-gray-700 disabled:opacity-50 text-white text-sm py-2 px-4 rounded"
+                >
+                  Private reflection
+                </button>
               </div>
             )}
 

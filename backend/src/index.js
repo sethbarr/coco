@@ -34,6 +34,7 @@ app.use('/api/sessions', require('./routes/sessions'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/connections', require('./routes/connections'));
 app.use('/api/topics', require('./routes/topics'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // In production, serve the built React app from the same server
 // (same origin: no CORS config needed, WebSockets connect to the same host)

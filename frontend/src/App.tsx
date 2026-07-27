@@ -15,6 +15,7 @@ import SessionsPage from './components/sessions/SessionsPage';
 import TopicsPage from './components/topics/TopicsPage';
 import TopicDetailPage from './components/topics/TopicDetailPage';
 import Debug from './components/Debug';
+import NotificationBell from './components/layout/NotificationBell';
 import { loadUser } from './store/authSlice';
 
 const App: React.FC = () => {
@@ -49,6 +50,7 @@ const App: React.FC = () => {
               </>
             ) : (
               <>
+                <NotificationBell />
                 <Link to="/dashboard" className="text-teal-600 hover:text-teal-800 mr-4">Dashboard</Link>
                 <Link to="/topics" className="text-teal-600 hover:text-teal-800 mr-4">Topics</Link>
                 <Link to="/connections" className="text-teal-600 hover:text-teal-800 mr-4">Connections</Link>

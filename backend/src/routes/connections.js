@@ -3,6 +3,7 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const auth = require('../middleware/auth');
+const { notify } = require('../services/notify');
 
 // Middleware to check if user is authenticated
 router.use(auth);
@@ -91,6 +92,13 @@ router.post('/invite', async (req, res) => {
         }
       }
     });
+
+    await notify(
+      recipient.id,
+      'connection_invite',
+      `${connectionWithDetails.creator.pseudonym} invited you to connect`,
+      '/connections'
+    );
 
     res.status(201).json(connectionWithDetails);
   } catch (error) {
@@ -184,6 +192,13 @@ router.put('/:id/accept', async (req, res) => {
         }
       }
     });
+
+    await notify(
+      updatedConnection.creator.id,
+      'connection_accepted',
+      `${updatedConnection.recipient.pseudonym} accepted your connection invitation`,
+      '/connections'
+    );
 
     res.json(updatedConnection);
   } catch (error) {

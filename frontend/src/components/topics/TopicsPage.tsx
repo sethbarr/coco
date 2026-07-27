@@ -21,7 +21,10 @@ export interface TopicView {
   mySummary: { content: string; approvedAt: string | null; updatedAt: string } | null;
   partnerSummary: TopicSummaryView | null;
   myPrepSessionId: string | null;
+  myReflectionSessionId: string | null;
   jointSessionId: string | null;
+  checkinSessionId: string | null;
+  nextCheckInAt: string | null;
   bothApproved: boolean;
 }
 

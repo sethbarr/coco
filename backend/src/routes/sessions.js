@@ -3,7 +3,8 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const auth = require('../middleware/auth');
-const { generateSessionRecap } = require('../services/claude-simple');
+const { generateSessionRecap, generateCheckinRecap } = require('../services/claude-simple');
+const { notify } = require('../services/notify');
 
 // Middleware to check if user is authenticated
 router.use(auth);
@@ -383,7 +384,7 @@ router.post('/:id/wrapup', async (req, res) => {
     const session = await prisma.session.findUnique({
       where: { id },
       include: {
-        topic: { include: { summaries: { include: { user: { select: { id: true, pseudonym: true } } } } } },
+        topic: { include: { summaries: { include: { user: { select: { id: true, pseudonym: true } } } }, agreements: true } },
         recap: { include: { agreements: true } },
         participants: { include: { user: { select: { id: true, pseudonym: true } } } },
         messages: {
@@ -400,6 +401,8 @@ router.post('/:id/wrapup', async (req, res) => {
     if (session.type !== 'joint' || !session.topic) {
       return res.status(400).json({ message: 'Wrap-up is only available for topic joint sessions' });
     }
+    // Wrapping up ends the session so a future check-in can be started fresh
+
     if (session.recap) {
       return res.json(session.recap); // already wrapped up
     }
@@ -408,20 +411,47 @@ router.post('/:id/wrapup', async (req, res) => {
     }
 
     const participantNames = session.participants.map(p => p.user.pseudonym);
-    const summaries = session.topic.summaries
-      .filter(s => s.approvedAt)
-      .map(s => ({ name: s.user.pseudonym, content: s.content }));
-
-    const recapData = await generateSessionRecap(
-      session.topic.title, participantNames, session.messages, summaries
-    );
-    if (!recapData) {
-      return res.status(502).json({ message: 'Could not generate a recap — please try again' });
-    }
-
-    // Map commitment pseudonyms back to user ids
     const byName = {};
-    session.participants.forEach(p => { byName[p.user.pseudonym] = p.user.id; });
+    const nameById = {};
+    session.participants.forEach(p => { byName[p.user.pseudonym] = p.user.id; nameById[p.user.id] = p.user.pseudonym; });
+
+    let recapData;
+    let statusUpdates = null;
+
+    if (session.kind === 'checkin') {
+      // Check-in wrap-up: per-agreement verdicts + any new agreements
+      const liveAgreements = session.topic.agreements
+        .filter(a => ['active', 'struggling', 'kept'].includes(a.status))
+        .map(a => ({ id: a.id, text: a.text, owner: a.ownerId ? nameById[a.ownerId] || null : null, status: a.status }));
+
+      const checkinData = await generateCheckinRecap(
+        session.topic.title, participantNames, session.messages, liveAgreements
+      );
+      if (!checkinData) {
+        return res.status(502).json({ message: 'Could not generate a recap — please try again' });
+      }
+      // Map 1-based indices back to agreement ids
+      statusUpdates = checkinData.statusUpdates
+        .filter(u => u.index >= 1 && u.index <= liveAgreements.length)
+        .map(u => ({ agreementId: liveAgreements[u.index - 1].id, status: u.status }));
+      recapData = {
+        summary: checkinData.summary,
+        agreements: checkinData.newAgreements,
+        commitments: checkinData.commitments,
+        suggestedCheckInDays: checkinData.suggestedCheckInDays
+      };
+    } else {
+      const summaries = session.topic.summaries
+        .filter(s => s.approvedAt)
+        .map(s => ({ name: s.user.pseudonym, content: s.content }));
+
+      recapData = await generateSessionRecap(
+        session.topic.title, participantNames, session.messages, summaries
+      );
+      if (!recapData) {
+        return res.status(502).json({ message: 'Could not generate a recap — please try again' });
+      }
+    }
 
     const recap = await prisma.sessionRecap.create({
       data: {
@@ -429,6 +459,7 @@ router.post('/:id/wrapup', async (req, res) => {
         topicId: session.topic.id,
         summary: recapData.summary,
         suggestedCheckInDays: recapData.suggestedCheckInDays,
+        statusUpdates: statusUpdates || undefined,
         agreements: {
           create: [
             ...recapData.agreements.map(text => ({
@@ -444,6 +475,20 @@ router.post('/:id/wrapup', async (req, res) => {
       },
       include: { agreements: true }
     });
+
+    // Wrapping up completes the session; the next joint/check-in starts fresh
+    await prisma.session.update({ where: { id: session.id }, data: { endedAt: new Date() } });
+
+    // Let the other participant know a recap awaits their endorsement
+    const other = session.participants.find(p => p.user.id !== userId);
+    if (other) {
+      await notify(
+        other.user.id,
+        'recap_created',
+        `Coco wrapped up your ${session.kind === 'checkin' ? 'check-in' : 'session'} on "${session.topic.title}" — review and endorse the recap`,
+        `/topics/${session.topic.id}`
+      );
+    }
 
     res.status(201).json(recap);
   } catch (error) {

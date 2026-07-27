@@ -47,6 +47,7 @@ model User {
   securityEvents SecurityEvent[] @relation("UserSecurityEvents")
   createdTopics Topic[] @relation("TopicCreator")
   sharedSummaries SharedSummary[] @relation("UserSummaries")
+  notifications Notification[] @relation("UserNotifications")
 
 }
 
@@ -93,6 +94,7 @@ model SessionRecap {
   summary               String
   suggestedCheckInDays  Int?
   endorsements          Json     @default("{}") // { userId: ISO timestamp }
+  statusUpdates         Json?    // check-in recaps: [{agreementId, status}] applied on full endorsement
   createdAt             DateTime @default(now())
 
   // Relationships
@@ -135,6 +137,7 @@ model SharedSummary {
 model Session {
   id          String    @id @default(uuid())
   type        String    // 'individual' or 'joint'
+  kind        String    @default("standard") // 'standard', 'checkin', 'reflection'
   createdById String
   topicId     String?   // set when this session is part of a guided topic
   createdAt   DateTime  @default(now())
@@ -172,6 +175,19 @@ model Message {
   // Relationships
   session            Session  @relation(fields: [sessionId], references: [id])
   sender             User     @relation("SenderMessages", fields: [senderId], references: [id])
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  type      String    // 'connection_invite', 'connection_accepted', 'topic_created', 'summary_approved', 'joint_ready', 'recap_created', 'plan_active'
+  message   String
+  link      String?   // in-app route, e.g. /topics/abc
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  // Relationships
+  user User @relation("UserNotifications", fields: [userId], references: [id])
 }
 
 model SecurityEvent {

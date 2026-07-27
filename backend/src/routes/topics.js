@@ -9,6 +9,7 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const auth = require('../middleware/auth');
+const { notify } = require('../services/notify');
 
 router.use(auth);
 
@@ -26,7 +27,7 @@ async function loadTopicForUser(topicId, userId) {
       summaries: true,
       sessions: {
         select: {
-          id: true, type: true, createdAt: true, endedAt: true,
+          id: true, type: true, kind: true, createdAt: true, endedAt: true,
           participants: { select: { userId: true } }
         }
       }
@@ -57,9 +58,13 @@ function topicView(topic, userId) {
     : null;
 
   const myPrepSession = topic.sessions.find(
-    s => s.type === 'individual' && s.participants.some(p => p.userId === userId)
+    s => s.type === 'individual' && s.kind === 'standard' && s.participants.some(p => p.userId === userId)
   );
-  const jointSession = topic.sessions.find(s => s.type === 'joint' && !s.endedAt);
+  const myReflectionSession = topic.sessions.find(
+    s => s.type === 'individual' && s.kind === 'reflection' && !s.endedAt && s.participants.some(p => p.userId === userId)
+  );
+  const jointSession = topic.sessions.find(s => s.type === 'joint' && s.kind === 'standard' && !s.endedAt);
+  const checkinSession = topic.sessions.find(s => s.type === 'joint' && s.kind === 'checkin' && !s.endedAt);
 
   return {
     id: topic.id,
@@ -70,7 +75,10 @@ function topicView(topic, userId) {
     mySummary: mine,
     partnerSummary: theirs,
     myPrepSessionId: myPrepSession?.id || null,
+    myReflectionSessionId: myReflectionSession?.id || null,
     jointSessionId: jointSession?.id || null,
+    checkinSessionId: checkinSession?.id || null,
+    nextCheckInAt: topic.nextCheckInAt,
     bothApproved:
       topic.summaries.filter(s => s.approvedAt).length === 2
   };
@@ -104,7 +112,16 @@ router.post('/', async (req, res) => {
       data: { title: title.trim(), connectionId, createdById: userId }
     });
     const { topic: full } = await loadTopicForUser(topic.id, userId);
-    res.status(201).json(topicView(full, userId));
+    const view = topicView(full, userId);
+    const me = connection.creatorId === userId
+      ? full.connection.creator : full.connection.recipient;
+    await notify(
+      view.partner.id,
+      'topic_created',
+      `${me.pseudonym} started a topic with you: "${view.title}"`,
+      `/topics/${topic.id}`
+    );
+    res.status(201).json(view);
   } catch (error) {
     console.error('Error creating topic:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -134,7 +151,7 @@ router.get('/', async (req, res) => {
         summaries: true,
         sessions: {
           select: {
-            id: true, type: true, createdAt: true, endedAt: true,
+            id: true, type: true, kind: true, createdAt: true, endedAt: true,
             participants: { select: { userId: true } }
           }
         }
@@ -171,6 +188,7 @@ router.post('/:id/prep', async (req, res) => {
       where: {
         topicId: topic.id,
         type: 'individual',
+        kind: 'standard',
         endedAt: null,
         participants: { some: { userId } }
       }
@@ -252,6 +270,18 @@ router.post('/:id/summary/approve', async (req, res) => {
       data: { status: bothApproved ? 'joint_ready' : 'prep' }
     });
 
+    const { creator, recipient } = topic.connection;
+    const partner = creator.id === userId ? recipient : creator;
+    const me = creator.id === userId ? creator : recipient;
+    await notify(
+      partner.id,
+      bothApproved ? 'joint_ready' : 'summary_approved',
+      bothApproved
+        ? `You're both ready — the joint session for "${topic.title}" is unlocked`
+        : `${me.pseudonym} approved their shared summary for "${topic.title}"`,
+      `/topics/${topic.id}`
+    );
+
     res.json({ status: updated.status, bothApproved });
   } catch (error) {
     console.error('Error approving summary:', error);
@@ -269,7 +299,7 @@ router.post('/:id/joint', async (req, res) => {
     const { topic, error } = await loadTopicForUser(req.params.id, userId);
     if (error) return res.status(error.status).json({ message: error.message });
 
-    const existing = topic.sessions.find(s => s.type === 'joint' && !s.endedAt);
+    const existing = topic.sessions.find(s => s.type === 'joint' && s.kind === 'standard' && !s.endedAt);
     if (existing) return res.json({ sessionId: existing.id });
 
     const approved = topic.summaries.filter(s => s.approvedAt);
@@ -297,6 +327,94 @@ router.post('/:id/joint', async (req, res) => {
   }
 });
 
+/**
+ * @route POST /api/topics/:id/checkin
+ * @desc Start (or return) a check-in session — reviews the active agreements.
+ *       Requires an active plan (at least one active agreement).
+ */
+router.post('/:id/checkin', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { topic, error } = await loadTopicForUser(req.params.id, userId);
+    if (error) return res.status(error.status).json({ message: error.message });
+
+    const existing = await prisma.session.findFirst({
+      where: { topicId: topic.id, type: 'joint', kind: 'checkin', endedAt: null }
+    });
+    if (existing) return res.json({ sessionId: existing.id });
+
+    const activeCount = await prisma.agreement.count({
+      where: { topicId: topic.id, status: { in: ['active', 'struggling', 'kept'] } }
+    });
+    if (activeCount === 0) {
+      return res.status(400).json({
+        message: 'No active agreements to review yet — finish a joint session and endorse its recap first'
+      });
+    }
+
+    const { creator, recipient } = topic.connection;
+    const session = await prisma.session.create({
+      data: { type: 'joint', kind: 'checkin', createdById: userId, topicId: topic.id }
+    });
+    await prisma.sessionParticipant.createMany({
+      data: [
+        { sessionId: session.id, userId: creator.id },
+        { sessionId: session.id, userId: recipient.id }
+      ]
+    });
+
+    const partner = creator.id === userId ? recipient : creator;
+    const me = creator.id === userId ? creator : recipient;
+    await notify(
+      partner.id,
+      'checkin_started',
+      `${me.pseudonym} started a check-in for "${topic.title}" — join when you're ready`,
+      `/sessions/${session.id}`
+    );
+
+    res.status(201).json({ sessionId: session.id });
+  } catch (error) {
+    console.error('Error creating check-in session:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+/**
+ * @route POST /api/topics/:id/reflect
+ * @desc Get or create my private reflection session for this topic
+ */
+router.post('/:id/reflect', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { topic, error } = await loadTopicForUser(req.params.id, userId);
+    if (error) return res.status(error.status).json({ message: error.message });
+
+    let session = await prisma.session.findFirst({
+      where: {
+        topicId: topic.id,
+        type: 'individual',
+        kind: 'reflection',
+        endedAt: null,
+        participants: { some: { userId } }
+      }
+    });
+
+    if (!session) {
+      session = await prisma.session.create({
+        data: { type: 'individual', kind: 'reflection', createdById: userId, topicId: topic.id }
+      });
+      await prisma.sessionParticipant.create({
+        data: { sessionId: session.id, userId }
+      });
+    }
+
+    res.json({ sessionId: session.id });
+  } catch (error) {
+    console.error('Error creating reflection session:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 /** Load plan data (recaps + agreements) with endorsement state for a topic. */
 async function loadPlan(topicId) {
   return prisma.sessionRecap.findMany({
@@ -320,6 +438,10 @@ router.get('/:id/plan', async (req, res) => {
     const { creator, recipient } = topic.connection;
     const names = { [creator.id]: creator.pseudonym, [recipient.id]: recipient.pseudonym };
 
+    const allAgreements = await prisma.agreement.findMany({ where: { topicId: topic.id } });
+    const agreementText = {};
+    allAgreements.forEach(a => { agreementText[a.id] = a.text; });
+
     res.json({
       nextCheckInAt: topic.nextCheckInAt,
       recaps: recaps.map(r => {
@@ -332,6 +454,12 @@ router.get('/:id/plan', async (req, res) => {
           endorsedByMe: !!endorsements[userId],
           endorsedByPartner: Object.keys(endorsements).some(id => id !== userId),
           fullyEndorsed: Object.keys(endorsements).length >= 2,
+          statusUpdates: Array.isArray(r.statusUpdates)
+            ? r.statusUpdates.map(u => ({
+                status: u.status,
+                text: agreementText[u.agreementId] || null
+              }))
+            : [],
           agreements: r.agreements.map(a => ({
             id: a.id,
             text: a.text,
@@ -371,7 +499,22 @@ router.post('/:id/recaps/:recapId/endorse', async (req, res) => {
       data: { endorsements }
     });
 
+    const { creator, recipient } = topic.connection;
+    const partner = creator.id === userId ? recipient : creator;
+    const me = creator.id === userId ? creator : recipient;
+
     if (fullyEndorsed) {
+      // Apply agreement status updates from check-in recaps
+      if (Array.isArray(recap.statusUpdates)) {
+        for (const u of recap.statusUpdates) {
+          if (u?.agreementId && ['kept', 'struggling', 'retired', 'active'].includes(u.status)) {
+            await prisma.agreement.updateMany({
+              where: { id: u.agreementId, topicId: topic.id },
+              data: { status: u.status }
+            });
+          }
+        }
+      }
       await prisma.agreement.updateMany({
         where: { recapId: recap.id, status: 'proposed' },
         data: { status: 'active' }
@@ -381,6 +524,19 @@ router.post('/:id/recaps/:recapId/endorse', async (req, res) => {
         where: { id: topic.id },
         data: { nextCheckInAt: new Date(Date.now() + days * 24 * 60 * 60 * 1000) }
       });
+      await notify(
+        partner.id,
+        'plan_active',
+        `Your plan for "${topic.title}" is now active — both of you endorsed the recap`,
+        `/topics/${topic.id}`
+      );
+    } else {
+      await notify(
+        partner.id,
+        'recap_created',
+        `${me.pseudonym} endorsed the session recap for "${topic.title}" — your endorsement is needed`,
+        `/topics/${topic.id}`
+      );
     }
 
     res.json({ fullyEndorsed });

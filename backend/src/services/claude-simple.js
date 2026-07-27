@@ -294,6 +294,190 @@ GUIDANCE FOR THIS JOINT SESSION:
 }
 
 /**
+ * Private reflection session — how are the agreements going, in private.
+ * @param {string} message
+ * @param {Array} history
+ * @param {string} topicTitle
+ * @param {Array<{text: string, owner: string|null, status: string}>} agreements
+ * @returns {Promise<string>}
+ */
+async function handleReflection(message, history = [], topicTitle = '', agreements = []) {
+  if (!anthropic) return generateFallbackResponse();
+
+  const agreementList = agreements
+    .map(a => `- ${a.owner ? `[${a.owner}'s commitment] ` : '[shared] '}${a.text} (status: ${a.status})`)
+    .join('\n');
+
+  const reflectionPrompt = `${BASE_SYSTEM_PROMPT}
+
+GUIDANCE FOR THIS PRIVATE REFLECTION SESSION:
+This is a private check-in with one partner about the topic "${topicTitle}".
+Nothing said here is shared with their partner. The couple's current agreements:
+
+${agreementList || '(no agreements yet)'}
+
+Your job:
+- Ask how things have actually gone since the plan was made — their own follow-through
+  first, honestly and without judgment. It's safe here to admit what slipped.
+- Explore what got in the way (logistics? feelings? the agreement itself being wrong?).
+- Never help them build a case against their partner. Redirect blame toward what they
+  can influence and what they'd want to say constructively.
+- Toward the end, help them decide what they want to bring to the next joint check-in:
+  one thing to acknowledge, one thing to ask for, phrased non-blamingly.
+- Keep responses short and conversational. One question at a time.`;
+
+  try {
+    const processedMessages = history.slice(-20).map(msg => ({
+      role: msg.isAi ? 'assistant' : 'user',
+      content: msg.content || msg.encryptedContent
+    }));
+    processedMessages.push({ role: 'user', content: message });
+
+    const response = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
+      system: reflectionPrompt,
+      messages: processedMessages,
+      max_tokens: 800
+    });
+    return extractText(response) || generateFallbackResponse();
+  } catch (error) {
+    console.error('Error in reflection session:', error.message);
+    return generateFallbackResponse();
+  }
+}
+
+/**
+ * Joint check-in session — review the active agreements together.
+ * @param {string} message
+ * @param {string} senderName
+ * @param {Array<string>} participantNames
+ * @param {Array} history
+ * @param {Object} briefing - { topicTitle, agreements: [{id, text, owner, status}], lastRecapSummary }
+ * @returns {Promise<string>}
+ */
+async function handleCheckinSession(message, senderName, participantNames = [], history = [], briefing = {}) {
+  if (!anthropic) return generateFallbackResponse();
+
+  const names = participantNames.join(' and ');
+  const agreementList = (briefing.agreements || [])
+    .map((a, i) => `${i + 1}. ${a.owner ? `[${a.owner}'s commitment] ` : '[shared] '}${a.text} (current status: ${a.status})`)
+    .join('\n');
+
+  const checkinPrompt = `${BASE_SYSTEM_PROMPT}
+
+GUIDANCE FOR THIS CHECK-IN SESSION:
+You are facilitating a scheduled check-in between ${names} on the topic "${briefing.topicTitle}".
+Messages from participants are prefixed with their name in brackets.
+
+Their current agreements:
+${agreementList || '(none)'}
+
+${briefing.lastRecapSummary ? `From the last session: ${briefing.lastRecapSummary}` : ''}
+
+HOW TO RUN THE CHECK-IN:
+- If this is the first message, welcome them back warmly and explain the shape:
+  you'll go through the agreements one at a time — what worked, what was hard —
+  hearing briefly from each of them, then decide together to keep, adjust, or
+  retire each one.
+- Take ONE agreement at a time. Ask each partner in turn how it actually went.
+  Celebrate what was kept (genuinely, specifically). Normalize what slipped —
+  a struggling agreement usually means the agreement needs adjusting, not that
+  someone failed.
+- If they disagree about how it went, reflect both views neutrally.
+- After covering the agreements, ask if anything new came up that needs an agreement.
+- Close by suggesting they wrap up the session so the updated plan gets recorded.
+- Keep each response short. One agreement, one question at a time.`;
+
+  try {
+    const processedMessages = history.slice(-30).map(msg => ({
+      role: msg.isAi ? 'assistant' : 'user',
+      content: msg.isAi
+        ? (msg.content || msg.encryptedContent)
+        : `[${msg.sender?.pseudonym || 'participant'}]: ${msg.content || msg.encryptedContent}`
+    }));
+    processedMessages.push({ role: 'user', content: `[${senderName}]: ${message}` });
+
+    const response = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
+      system: checkinPrompt,
+      messages: processedMessages,
+      max_tokens: 1000
+    });
+    return extractText(response) || generateFallbackResponse();
+  } catch (error) {
+    console.error('Error in check-in session:', error.message);
+    return generateFallbackResponse();
+  }
+}
+
+/**
+ * Generate a structured recap of a CHECK-IN session: per-agreement status
+ * verdicts plus any new agreements.
+ * @returns {Promise<{summary, statusUpdates: [{index, status}], newAgreements: string[], commitments, suggestedCheckInDays}|null>}
+ */
+async function generateCheckinRecap(topicTitle, participantNames, history = [], agreements = []) {
+  if (!anthropic) return null;
+
+  const transcript = history.slice(-60).map(msg => msg.isAi
+    ? `Coco: ${msg.content || msg.encryptedContent}`
+    : `${msg.sender?.pseudonym || 'participant'}: ${msg.content || msg.encryptedContent}`
+  ).join('\n');
+
+  const agreementList = agreements
+    .map((a, i) => `${i + 1}. ${a.owner ? `[${a.owner}'s commitment] ` : '[shared] '}${a.text} (status: ${a.status})`)
+    .join('\n');
+
+  const prompt = `You are Coco, wrapping up a check-in session between ${participantNames.join(' and ')} on the topic "${topicTitle}".
+
+THE AGREEMENTS THEY REVIEWED (numbered):
+${agreementList}
+
+SESSION TRANSCRIPT:
+${transcript}
+
+Produce a wrap-up as JSON with exactly this shape:
+{
+  "summary": "3-5 sentences: how the check-in went, what's working, what they adjusted.",
+  "statusUpdates": [{"index": <agreement number from the list above>, "status": "kept" | "struggling" | "retired" | "active"}],
+  "newAgreements": ["any NEW shared agreements reached this session, 'We will...' phrasing"],
+  "commitments": [{"name": "<participant pseudonym>", "text": "new individual commitment, 'I will...'"}],
+  "suggestedCheckInDays": <7, 14, or 30>
+}
+
+Status meanings: "kept" = consistently done and worth celebrating; "active" = keep going as is;
+"struggling" = not landing, they adjusted or want to retry; "retired" = no longer needed
+(either it worked and became habit, or they replaced it). Only report what the conversation
+supports. Respond with ONLY the JSON object.`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 1200
+    });
+    let text = extractText(response);
+    if (!text) return null;
+    text = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    const parsed = JSON.parse(text);
+    if (typeof parsed.summary !== 'string') return null;
+    return {
+      summary: parsed.summary,
+      statusUpdates: Array.isArray(parsed.statusUpdates)
+        ? parsed.statusUpdates.filter(u => Number.isInteger(u?.index) && typeof u?.status === 'string')
+        : [],
+      newAgreements: Array.isArray(parsed.newAgreements) ? parsed.newAgreements.filter(a => typeof a === 'string') : [],
+      commitments: Array.isArray(parsed.commitments)
+        ? parsed.commitments.filter(c => c && typeof c.name === 'string' && typeof c.text === 'string')
+        : [],
+      suggestedCheckInDays: Number.isInteger(parsed.suggestedCheckInDays) ? parsed.suggestedCheckInDays : 14
+    };
+  } catch (error) {
+    console.error('Error generating check-in recap:', error.message);
+    return null;
+  }
+}
+
+/**
  * Generate a structured recap of a joint session.
  * @param {string} topicTitle
  * @param {Array<string>} participantNames
@@ -362,5 +546,8 @@ module.exports = {
   handleUserMessage,
   handlePrepSession,
   handleJointSession,
-  generateSessionRecap
+  handleReflection,
+  handleCheckinSession,
+  generateSessionRecap,
+  generateCheckinRecap
 };

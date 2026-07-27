@@ -33,6 +33,9 @@ function init(httpServer) {
   });
 
   io.on('connection', (socket) => {
+    // Personal room for notifications
+    socket.join(`user:${socket.userId}`);
+
     socket.on('session:join', async (sessionId, callback) => {
       try {
         const participant = await prisma.sessionParticipant.findUnique({

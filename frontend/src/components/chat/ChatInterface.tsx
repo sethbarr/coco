@@ -149,10 +149,17 @@ const ChatInterface: React.FC = () => {
           </div>
           <div>
             <h2 className="text-xl font-bold">
-              {!currentSession 
-                ? 'Loading Session...' 
-                : currentSession.type === 'individual' 
-                  ? 'Individual Session with Coco'
+              {!currentSession
+                ? 'Loading Session...'
+                : currentSession.kind === 'checkin'
+                  ? `Check-in with ${currentSession.participants
+                      .filter(p => p.user.id !== user?.id)
+                      .map(p => p.user.pseudonym)
+                      .join(', ')}`
+                : currentSession.kind === 'reflection'
+                  ? 'Private Reflection with Coco'
+                : currentSession.type === 'individual'
+                  ? (currentSession.topic ? 'Private Prep with Coco' : 'Individual Session with Coco')
                   : `Session with ${currentSession.participants
                       .filter(p => p.user.id !== user?.id)
                       .map(p => p.user.pseudonym)
@@ -180,7 +187,11 @@ const ChatInterface: React.FC = () => {
               disabled={wrappingUp}
               className="ml-auto bg-white/20 hover:bg-white/30 disabled:opacity-50 text-white text-sm py-2 px-4 rounded"
             >
-              {wrappingUp ? 'Coco is writing your recap…' : currentSession.recap ? 'View recap' : 'Wrap up session'}
+              {wrappingUp
+                ? 'Coco is writing your recap…'
+                : currentSession.recap
+                  ? 'View recap'
+                  : currentSession.kind === 'checkin' ? 'Wrap up check-in' : 'Wrap up session'}
             </button>
           )}
         </div>

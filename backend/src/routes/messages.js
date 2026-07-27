@@ -5,7 +5,7 @@ const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { handleUserMessage, handlePrepSession, handleJointSession } = require('../services/claude-simple');
+const { handleUserMessage, handlePrepSession, handleJointSession, handleReflection, handleCheckinSession } = require('../services/claude-simple');
 const auth = require('../middleware/auth');
 const { getIO } = require('../socket');
 
@@ -41,7 +41,9 @@ router.post('/', async (req, res) => {
           include: {
             summaries: {
               include: { user: { select: { id: true, pseudonym: true } } }
-            }
+            },
+            agreements: true,
+            recaps: { orderBy: { createdAt: 'desc' }, take: 1 }
           }
         }
       }
@@ -85,8 +87,17 @@ router.post('/', async (req, res) => {
 
     try {
       // Handle based on session type
+      const nameById = {};
+      session.participants.forEach(p => { nameById[p.user.id] = p.user.pseudonym; });
+      const liveAgreements = (session.topic?.agreements || [])
+        .filter(a => ['active', 'struggling', 'kept'].includes(a.status))
+        .map(a => ({ id: a.id, text: a.text, owner: a.ownerId ? nameById[a.ownerId] || null : null, status: a.status }));
+
       if (session.type === 'individual') {
-        if (session.topic) {
+        if (session.topic && session.kind === 'reflection') {
+          // Private reflection on how the agreements are going
+          aiResponse = await handleReflection(content, messageHistory, session.topic.title, liveAgreements);
+        } else if (session.topic) {
           // Guided private prep for a named topic
           aiResponse = await handlePrepSession(content, messageHistory, session.topic.title);
         } else {
@@ -97,18 +108,25 @@ router.post('/', async (req, res) => {
         const senderName = sender.user.pseudonym;
         const participantNames = session.participants.map(p => p.user.pseudonym);
 
-        // Topic-based joint sessions brief Coco with both approved summaries
-        let briefing = null;
-        if (session.topic) {
-          briefing = {
+        if (session.topic && session.kind === 'checkin') {
+          aiResponse = await handleCheckinSession(content, senderName, participantNames, messageHistory, {
             topicTitle: session.topic.title,
-            summaries: session.topic.summaries
-              .filter(s => s.approvedAt)
-              .map(s => ({ name: s.user.pseudonym, content: s.content }))
-          };
+            agreements: liveAgreements,
+            lastRecapSummary: session.topic.recaps?.[0]?.summary || null
+          });
+        } else {
+          // Topic-based joint sessions brief Coco with both approved summaries
+          let briefing = null;
+          if (session.topic) {
+            briefing = {
+              topicTitle: session.topic.title,
+              summaries: session.topic.summaries
+                .filter(s => s.approvedAt)
+                .map(s => ({ name: s.user.pseudonym, content: s.content }))
+            };
+          }
+          aiResponse = await handleJointSession(content, senderName, participantNames, messageHistory, briefing);
         }
-
-        aiResponse = await handleJointSession(content, senderName, participantNames, messageHistory, briefing);
       }
       
       console.log('AI Response received:', aiResponse ? aiResponse.substring(0, 50) + '...' : 'No response');
