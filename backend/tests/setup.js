@@ -57,7 +57,9 @@ jest.mock('@prisma/client', () => {
   };
 });
 
-// Global teardown
-afterAll(() => {
-  jest.clearAllMocks();
-});
+// Global teardown — setupFiles run before Jest globals exist, so guard
+if (typeof afterAll === 'function') {
+  afterAll(() => {
+    jest.clearAllMocks();
+  });
+}

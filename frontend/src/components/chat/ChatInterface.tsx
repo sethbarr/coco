@@ -36,6 +36,30 @@ const MessageBubble = ({ message, userId }) => {
   );
 };
 
+// Crisis/support resource card, shown when the backend safety check flags a message
+const SafetyResourceCard = ({ safety }) => (
+  <div className={`mb-4 max-w-[90%] mx-auto rounded-lg border p-4 ${
+    safety.level === 'crisis' ? 'bg-red-50 border-red-300' : 'bg-amber-50 border-amber-300'
+  }`}>
+    <div className={`font-semibold mb-2 ${safety.level === 'crisis' ? 'text-red-800' : 'text-amber-800'}`}>
+      {safety.title}
+    </div>
+    <ul className="space-y-2 mb-3">
+      {safety.resources?.map((r, i) => (
+        <li key={i} className="text-sm text-gray-800">
+          <span className="font-medium">
+            {r.url ? (
+              <a href={r.url} target="_blank" rel="noopener noreferrer" className="underline">{r.name}</a>
+            ) : r.name}
+          </span>
+          {r.contact && <span className="text-gray-600"> — {r.contact}</span>}
+        </li>
+      ))}
+    </ul>
+    <p className="text-xs text-gray-600">{safety.disclaimer}</p>
+  </div>
+);
+
 // Typing Indicator Component
 const TypingIndicator = () => (
   <div className="flex items-center mb-4">
@@ -203,11 +227,15 @@ const ChatInterface: React.FC = () => {
           <div className="space-y-4">
             {currentSession?.messages && currentSession.messages.length > 0 ? (
               currentSession.messages.map((msg) => (
-                <MessageBubble
-                  key={msg.id}
-                  message={msg}
-                  userId={user?.id}
-                />
+                <React.Fragment key={msg.id}>
+                  <MessageBubble
+                    message={msg}
+                    userId={user?.id}
+                  />
+                  {msg.isAi && (msg as any).encryptionMetadata?.safety && (
+                    <SafetyResourceCard safety={(msg as any).encryptionMetadata.safety} />
+                  )}
+                </React.Fragment>
               ))
             ) : (
               <div className="text-center py-8">

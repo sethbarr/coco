@@ -6,6 +6,7 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { handleUserMessage, handlePrepSession, handleJointSession, handleReflection, handleCheckinSession } = require('../services/claude-simple');
+const { assessMessage, buildResourceCard, crisisPauseMessage } = require('../services/safety');
 const auth = require('../middleware/auth');
 const { getIO } = require('../socket');
 
@@ -83,56 +84,80 @@ router.post('/', async (req, res) => {
       }
     });
 
+    // Programmatic safety check — independent of the counseling prompt
+    let safety = null;
+    try {
+      const assessment = await assessMessage(content);
+      if (assessment) {
+        safety = buildResourceCard(assessment, session.type);
+        // Log the flag without message content — flags are queryable, transcripts stay private
+        await prisma.securityEvent.create({
+          data: {
+            userId,
+            eventType: 'safety_flag',
+            metadata: { sessionId, level: assessment.level, category: assessment.category }
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Safety assessment error:', error);
+    }
+
     let aiResponse;
 
-    try {
-      // Handle based on session type
-      const nameById = {};
-      session.participants.forEach(p => { nameById[p.user.id] = p.user.pseudonym; });
-      const liveAgreements = (session.topic?.agreements || [])
-        .filter(a => ['active', 'struggling', 'kept'].includes(a.status))
-        .map(a => ({ id: a.id, text: a.text, owner: a.ownerId ? nameById[a.ownerId] || null : null, status: a.status }));
+    if (safety?.level === 'crisis') {
+      // Pause the session: fixed, reviewed wording instead of a sampled reply
+      aiResponse = crisisPauseMessage(safety.category, session.type);
+    } else {
+      try {
+        // Handle based on session type
+        const nameById = {};
+        session.participants.forEach(p => { nameById[p.user.id] = p.user.pseudonym; });
+        const liveAgreements = (session.topic?.agreements || [])
+          .filter(a => ['active', 'struggling', 'kept'].includes(a.status))
+          .map(a => ({ id: a.id, text: a.text, owner: a.ownerId ? nameById[a.ownerId] || null : null, status: a.status }));
 
-      if (session.type === 'individual') {
-        if (session.topic && session.kind === 'reflection') {
-          // Private reflection on how the agreements are going
-          aiResponse = await handleReflection(content, messageHistory, session.topic.title, liveAgreements);
-        } else if (session.topic) {
-          // Guided private prep for a named topic
-          aiResponse = await handlePrepSession(content, messageHistory, session.topic.title);
-        } else {
-          aiResponse = await handleUserMessage(content, messageHistory);
-        }
-      } else if (session.type === 'joint') {
-        const sender = session.participants.find(p => p.user.id === userId);
-        const senderName = sender.user.pseudonym;
-        const participantNames = session.participants.map(p => p.user.pseudonym);
-
-        if (session.topic && session.kind === 'checkin') {
-          aiResponse = await handleCheckinSession(content, senderName, participantNames, messageHistory, {
-            topicTitle: session.topic.title,
-            agreements: liveAgreements,
-            lastRecapSummary: session.topic.recaps?.[0]?.summary || null
-          });
-        } else {
-          // Topic-based joint sessions brief Coco with both approved summaries
-          let briefing = null;
-          if (session.topic) {
-            briefing = {
-              topicTitle: session.topic.title,
-              summaries: session.topic.summaries
-                .filter(s => s.approvedAt)
-                .map(s => ({ name: s.user.pseudonym, content: s.content }))
-            };
+        if (session.type === 'individual') {
+          if (session.topic && session.kind === 'reflection') {
+            // Private reflection on how the agreements are going
+            aiResponse = await handleReflection(content, messageHistory, session.topic.title, liveAgreements);
+          } else if (session.topic) {
+            // Guided private prep for a named topic
+            aiResponse = await handlePrepSession(content, messageHistory, session.topic.title);
+          } else {
+            aiResponse = await handleUserMessage(content, messageHistory);
           }
-          aiResponse = await handleJointSession(content, senderName, participantNames, messageHistory, briefing);
+        } else if (session.type === 'joint') {
+          const sender = session.participants.find(p => p.user.id === userId);
+          const senderName = sender.user.pseudonym;
+          const participantNames = session.participants.map(p => p.user.pseudonym);
+
+          if (session.topic && session.kind === 'checkin') {
+            aiResponse = await handleCheckinSession(content, senderName, participantNames, messageHistory, {
+              topicTitle: session.topic.title,
+              agreements: liveAgreements,
+              lastRecapSummary: session.topic.recaps?.[0]?.summary || null
+            });
+          } else {
+            // Topic-based joint sessions brief Coco with both approved summaries
+            let briefing = null;
+            if (session.topic) {
+              briefing = {
+                topicTitle: session.topic.title,
+                summaries: session.topic.summaries
+                  .filter(s => s.approvedAt)
+                  .map(s => ({ name: s.user.pseudonym, content: s.content }))
+              };
+            }
+            aiResponse = await handleJointSession(content, senderName, participantNames, messageHistory, briefing);
+          }
         }
+        
+        console.log('AI Response received:', aiResponse ? aiResponse.substring(0, 50) + '...' : 'No response');
+      } catch (error) {
+        console.error('Error getting AI response:', error);
+        return res.status(500).json({ message: 'Failed to get AI response', error: error.message });
       }
-      
-      console.log('AI Response received:', aiResponse ? aiResponse.substring(0, 50) + '...' : 'No response');
-    } catch (error) {
-      console.error('Error getting AI response:', error);
-      return res.status(500).json({ message: 'Failed to get AI response', error: error.message });
     }
 
     // Store a single AI message visible to all participants
@@ -143,7 +168,9 @@ router.post('/', async (req, res) => {
         isAi: true,
         encryptedContent: aiResponse,
         encryptionMetadata: {
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          // Persisted so the resource card re-renders on reload
+          ...(safety ? { safety } : {})
         }
       }
     });
