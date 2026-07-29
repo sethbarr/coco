@@ -18,7 +18,7 @@ const PrivacyPage: React.FC = () => (
     <h1 className="text-3xl font-bold text-gray-900 mb-2">Privacy & Safety</h1>
     <p className="text-gray-600 mb-8">
       Coco is a place for sensitive conversations, so you deserve straight answers about who can
-      see what, and what this app is and isn't. Plain language, no legal fog.
+      see what, and what this app is and isn't.
     </p>
 
     <h2 className="text-xl font-bold text-gray-900 mb-4">What Coco is — and isn't</h2>
@@ -27,13 +27,16 @@ const PrivacyPage: React.FC = () => (
         No. Coco is an AI companion that helps you and your partner communicate — closer to a
         thoughtful, neutral friend than a clinician. Coco is not a therapist, doctor, or crisis
         service, and it will tell you so and point you to real humans (like the 988 Suicide &
-        Crisis Lifeline) whenever a conversation goes somewhere that needs one.
+        Crisis Lifeline) whenever a conversation goes somewhere that needs one. We can't list every available
+        resources but we will do our best. We might not be able (at the moment) 
+        to provide all available resources in your specific area. Please reach out to your local
+        crisis or help services if you need them.
       </p>
     </Q>
     <Q q="Who is Coco for?">
       <p>
         Adults (18+) working on communication in their relationships. Coco is not designed for
-        crisis situations, active abuse, or as a substitute for professional care — and it's built
+        crisis situations, active abuse, or as a substitute for professional care, and it's built
         to recognize when that line is being crossed and say so.
       </p>
     </Q>
@@ -69,7 +72,8 @@ const PrivacyPage: React.FC = () => (
         of crisis: self-harm, violence, or abuse. When something is detected, Coco shows support
         resources (hotlines, therapist directories), and in serious moments pauses the session to
         put those resources first. This runs in code, not at Coco's discretion — it can't be
-        talked out of it.
+        talked out of it. We do our best to provide the most relevant support resources but
+        can't know everything for your specific area.
       </p>
       <p>
         When a safety flag is recorded, we log <em>that</em> it happened and its category — never
@@ -101,7 +105,7 @@ const PrivacyPage: React.FC = () => (
       <p>
         <strong>What we won't claim: Coco is not end-to-end encrypted.</strong> Coco (the AI) has
         to read your messages to respond to them, which means message content exists on our server
-        in readable form. We think honesty about this beats a marketing claim. What protects you
+        in readable form. We think honesty about this is important. What protects you
         is TLS, at-rest encryption, strict access, and a design where the sensitive boundary —
         what your partner can see — is enforced by consent gates, not by promises.
       </p>
