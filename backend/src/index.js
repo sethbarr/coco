@@ -10,6 +10,17 @@ const socket = require('./socket');
 // Load environment variables
 dotenv.config();
 
+// Error tracking — dormant unless SENTRY_DSN is set (Railway env var)
+const Sentry = require('@sentry/node');
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
+    tracesSampleRate: 0.1
+  });
+  console.log('Sentry error tracking enabled');
+}
+
 // Initialize Express app
 const app = express();
 const prisma = new PrismaClient();
@@ -45,6 +56,11 @@ if (process.env.NODE_ENV === 'production') {
     if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) return next();
     res.sendFile(path.join(buildDir, 'index.html'));
   });
+}
+
+// Report errors to Sentry before the catch-all handler responds
+if (process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app);
 }
 
 // Error handling middleware

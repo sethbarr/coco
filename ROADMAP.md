@@ -42,10 +42,10 @@ The wrap-up produces agreements and a check-in date; nothing yet happens when th
 
 | Item | Why it matters |
 |---|---|
-| Automated tests + CI (GitHub Actions) | Every feature above touches the consent gates — regressions there are trust-fatal |
+| ✅ Automated tests + CI (GitHub Actions) | Shipped July 28, 2026: unit tests + frontend build + e2e smoke (`backend/scripts/e2e-smoke.js`) against a Postgres service on every push/PR |
 | Staging environment on Railway | Stop testing prompts/migrations in production |
-| Error tracking (Sentry) + uptime alerts | Today failures are only visible in Railway logs |
-| Database backups | Railway snapshots on; add scheduled `pg_dump` off-platform |
+| ✅ Error tracking (Sentry) | Wired July 28, 2026, dormant until `SENTRY_DSN` is set on Railway (create a Sentry project to activate). Uptime alerts still open |
+| ✅ Database backups | `backend/scripts/backup.sh` (pg_dump, 14-dump retention) — add a cron entry pointing at the Railway DATABASE_URL to schedule it |
 | Message pagination + context windowing | Sessions grow unbounded; costs and latency creep |
 | Socket reconnect + presence | Dropped connections currently just go quiet; show "partner is here" |
 | Prompt eval harness | Test prompt changes against recorded scenarios before shipping them |

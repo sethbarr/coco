@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main, feature/multiuser]
+  pull_request:
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx jest
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      # CI=true (Actions default) promotes CRA lint warnings to errors,
+      # matching the Railway build
+      - run: npm run build
+
+  e2e-smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: coco
+          POSTGRES_PASSWORD: coco
+          POSTGRES_DB: coco_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U coco"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://coco:coco@localhost:5432/coco_ci
+      DIRECT_URL: postgresql://coco:coco@localhost:5432/coco_ci
+      JWT_SECRET: ci-only-jwt-secret
+      NODE_ENV: development
+      PORT: 3001
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npx prisma migrate deploy
+      - name: Start backend
+        run: |
+          node src/index.js &
+          for i in $(seq 1 20); do
+            curl -sf http://localhost:3001/api/health && break
+            sleep 1
+          done
+      - run: node scripts/e2e-smoke.js http://localhost:3001
