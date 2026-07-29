@@ -38,7 +38,10 @@ export const register = createAsyncThunk(
       }
       return response.data;
     } catch (err: any) {
-      return rejectWithValue(err.response.data.message || 'Registration failed');
+      if (err.response?.status === 429) {
+        return rejectWithValue(err.response?.data?.message || 'Too many attempts — please wait about 15 minutes and try again.');
+      }
+      return rejectWithValue(err.response?.data?.message || 'Registration failed');
     }
   }
 );
@@ -55,7 +58,10 @@ export const login = createAsyncThunk(
       }
       return response.data;
     } catch (err: any) {
-      return rejectWithValue(err.response.data.message || 'Login failed');
+      if (err.response?.status === 429) {
+        return rejectWithValue(err.response?.data?.message || 'Too many attempts — please wait about 15 minutes and try again.');
+      }
+      return rejectWithValue(err.response?.data?.message || 'Login failed');
     }
   }
 );

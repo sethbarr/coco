@@ -93,9 +93,17 @@ const LoginPage: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Log In</h2>
         
         {error && (
-          <div className="bg-red-100 border-l-4 border-red-400 text-red-700 p-4 mb-4" role="alert">
-            <p>{error}</p>
-          </div>
+          // Rate limiting is a "slow down", not a "wrong password" — style it differently
+          /too many/i.test(error) ? (
+            <div className="bg-amber-50 border-l-4 border-amber-400 text-amber-800 p-4 mb-4" role="alert">
+              <p className="font-medium">Hold on a moment</p>
+              <p className="text-sm">{error} Your password wasn't checked — this isn't a login failure.</p>
+            </div>
+          ) : (
+            <div className="bg-red-100 border-l-4 border-red-400 text-red-700 p-4 mb-4" role="alert">
+              <p>{error}</p>
+            </div>
+          )
         )}
         
         <form onSubmit={handleSubmit}>
