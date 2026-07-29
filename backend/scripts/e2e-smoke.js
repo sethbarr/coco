@@ -82,6 +82,22 @@ async function req(method, path, token, body) {
   const topic = await req('POST', '/topics', t1, { connectionId: connId, title: 'e2e topic' });
   check('topic creation allowed after screen', topic.status === 201, topic);
 
+  // --- Messages + safety pipeline (no ANTHROPIC_API_KEY in CI: Coco uses
+  // canned fallbacks and the classifier degrades to 'concern' on screen hits,
+  // which is exactly the degraded mode worth asserting) ---
+  console.log('messages');
+  const session = await req('POST', '/sessions', t1, { type: 'individual' });
+  const sessionId = session.data?.id || session.data?.session?.id;
+  check('individual session created', (session.status === 200 || session.status === 201) && !!sessionId, session);
+
+  const hello = await req('POST', '/messages', t1, { sessionId, content: 'hello coco' });
+  check('message send returns AI reply', hello.status === 201 && !!hello.data?.aiMessage?.content, { status: hello.status });
+  check('no safety card on ordinary message', !hello.data?.aiMessage?.encryptionMetadata?.safety);
+
+  const risky = await req('POST', '/messages', t1, { sessionId, content: 'sometimes I think about hurting myself' });
+  const safety = risky.data?.aiMessage?.encryptionMetadata?.safety;
+  check('safety card attached on risk message', risky.status === 201 && !!safety && safety.resources?.length > 0, { safety });
+
   // --- Password recovery ---
   console.log('recovery');
   const code = r1.data.recoveryCodes[0];
