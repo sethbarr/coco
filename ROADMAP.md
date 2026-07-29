@@ -36,7 +36,10 @@ The wrap-up produces agreements and a check-in date; nothing yet happens when th
 
 - **Multi-party beyond couples** — the schema already supports family/friend connections; prompts and flows need family-specific variants (e.g., parent–teen has different neutrality rules).
 - **Therapist-adjacent mode** — export a consented topic history for a human therapist; positioning Coco as *between-sessions* support.
-- **Billing** — subscriptions (per person or per connection?); free tier scoped to one topic.
+- **Billing** — *decided July 28, 2026:* **per-couple (per-connection) subscription, $19/mo or $149/yr**, free tier = 1 active topic per connection with the full cycle included (the accountability loop is the hook; pay to open a second topic). Never meter messages — cap topics only. Either partner can be the payer; one subscription covers both.
+  - Mechanics: Stripe Checkout + Customer Portal (hosted; no card data touches Coco), subscription record attached to `Connection`, webhook-driven status, entitlement check only at topic creation.
+  - **`BILLING_ENABLED` env flag** — off during testing (everything free, no Stripe calls at all); flipping it on gates only *new* second topics, so existing testers keep what they have.
+  - Privacy note: Stripe necessarily learns the payer's real identity. Store only `stripeCustomerId` + status in Coco's DB; never sync name/email back into the pseudonymous account.
 
 ## Engineering foundation (parallel track, chip away continuously)
 
