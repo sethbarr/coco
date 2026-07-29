@@ -53,10 +53,15 @@ The wrap-up produces agreements and a check-in date; nothing yet happens when th
 
 ---
 
+## Quick follow-ups (10 minutes each, need Seth's accounts)
+
+- [ ] Create a Sentry project and set `SENTRY_DSN` on Railway (code already wired, dormant without it)
+- [ ] Add a cron entry running `backend/scripts/backup.sh` against the Railway `DATABASE_URL` (script exists and works; nothing schedules it yet)
+
 ## Suggested order of attack
 
 1. ~~Check-in sessions + agreement lifecycle~~ ✅
 2. ~~In-app notifications~~ ✅
-3. Crisis escalation + safety screen (unlocks inviting real users)
-4. Account recovery + Sentry + backups (don't lose people's data or trust)
+3. ~~Crisis escalation + safety screen~~ ✅ (unlocks inviting real users)
+4. ~~Account recovery + Sentry + backups~~ ✅ (activation follow-ups above)
 5. Exercises, streaming, PWA (deepen)
