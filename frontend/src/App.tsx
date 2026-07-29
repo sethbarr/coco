@@ -8,6 +8,7 @@ import TestLoginPage from './components/auth/TestLoginPage';
 import ApiTester from './components/auth/ApiTester';
 import SimpleLoginPage from './components/auth/SimpleLoginPage';
 import SignupPage from './components/auth/SignupPage';
+import RecoverPage from './components/auth/RecoverPage';
 import Dashboard from './components/Dashboard';
 import ChatInterface from './components/chat/ChatInterface';
 import ConnectionsPage from './components/connections/ConnectionsPage';
@@ -106,6 +107,7 @@ const App: React.FC = () => {
           } />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/recover" element={<RecoverPage />} />
           <Route path="/test-login" element={<TestLoginPage />} />
           <Route path="/api-tester" element={<ApiTester />} />
           <Route path="/simple-login" element={<SimpleLoginPage />} />

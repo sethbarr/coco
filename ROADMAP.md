@@ -20,7 +20,7 @@ The wrap-up produces agreements and a check-in date; nothing yet happens when th
 - ✅ **Crisis detection & escalation** *(shipped July 28, 2026)* — regex screen on every message + Haiku classifier on hits; crisis level pauses the session with fixed reviewed wording, concern level attaches a resource card (DV resources only in individual sessions — never on a shared screen). Flags logged to SecurityEvent without message content.
 - ✅ **Safety screen before first joint work** *(shipped July 28, 2026)* — 4-question private per-partner screening, once per connection; topic creation requires your own screen, joint/check-in sessions require both. Gates check completion only — outcomes are never shown to the partner; flagged users get private resources and decide for themselves whether to continue.
 - **Encryption honesty** — decide: implement real E2E (heavy: key management, Coco needs plaintext to function, so likely "encrypted at rest + strict access" instead) or rename/reframe honestly. Ship TLS + at-rest encryption + a plain-language privacy page.
-- **Account recovery** — pseudonymous accounts currently have no password reset path; losing a password loses the relationship history. Options: recovery codes shown at signup (fits pseudonymity) or optional email.
+- ✅ **Account recovery** *(shipped July 28, 2026)* — 8 one-time recovery codes shown at signup (stored hashed, forgiving input format); `/recover` resets the password, spends the code, and signs out all sessions. Existing users generate codes from the dashboard.
 - **Auth polish** — surface rate-limit messages distinctly from bad credentials; session expiry UX; delete-my-account (with partner-data implications thought through).
 
 ## Phase 3 — Deepen the work

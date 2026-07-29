@@ -49,7 +49,21 @@ model User {
   sharedSummaries SharedSummary[] @relation("UserSummaries")
   notifications Notification[] @relation("UserNotifications")
   safetyScreens SafetyScreen[] @relation("UserSafetyScreens")
+  recoveryCodes RecoveryCode[] @relation("UserRecoveryCodes")
 
+}
+
+// One-time account recovery codes (pseudonymous accounts have no email).
+// Stored bcrypt-hashed; plaintext is shown exactly once at generation.
+model RecoveryCode {
+  id        String    @id @default(uuid())
+  userId    String
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  // Relationships
+  user User @relation("UserRecoveryCodes", fields: [userId], references: [id])
 }
 
 model Connection {

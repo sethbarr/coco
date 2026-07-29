@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { RootState } from '../store';
 import { fetchSessions } from '../store/sessionSlice';
 import { fetchConnections } from '../store/connectionSlice';
+import api from '../utils/api';
 
 const Dashboard: React.FC = () => {
   const dispatch = useDispatch();
@@ -25,6 +26,22 @@ const Dashboard: React.FC = () => {
   
   // Get recent sessions (just the last 3)
   const recentSessions = sessions.slice(0, 3);
+
+  const [newCodes, setNewCodes] = useState<string[] | null>(null);
+  const [generating, setGenerating] = useState(false);
+
+  const regenerateCodes = async () => {
+    if (!window.confirm('Generate new recovery codes? Any codes you saved before will stop working.')) return;
+    setGenerating(true);
+    try {
+      const res = await api.post('/auth/recovery-codes');
+      setNewCodes(res.data.recoveryCodes);
+    } catch {
+      alert('Could not generate recovery codes — please try again.');
+    } finally {
+      setGenerating(false);
+    }
+  };
   
   return (
     <div className="max-w-4xl mx-auto">
@@ -143,6 +160,41 @@ const Dashboard: React.FC = () => {
             </Link>
           </div>
         </div>
+      </div>
+
+      {/* Account recovery codes */}
+      <div className="bg-white rounded-lg shadow-md mt-8 p-6">
+        <h2 className="text-lg font-semibold text-gray-800 mb-1">Recovery codes</h2>
+        <p className="text-sm text-gray-600 mb-3">
+          Your account has no email attached — one-time recovery codes are the only way back in
+          if you forget your password. Generating a new set replaces any previous codes.
+        </p>
+        {newCodes ? (
+          <div>
+            <div className="bg-gray-50 border border-gray-200 rounded-md p-4 mb-3 grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-sm text-gray-800">
+              {newCodes.map(code => <div key={code}>{code}</div>)}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigator.clipboard.writeText(newCodes.join('\n'))}
+                className="border border-teal-500 text-teal-600 hover:bg-teal-50 text-sm py-1 px-3 rounded"
+              >
+                Copy codes
+              </button>
+              <span className="text-xs text-gray-500 self-center">
+                Save these now — they won't be shown again.
+              </span>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={regenerateCodes}
+            disabled={generating}
+            className="border border-teal-500 text-teal-600 hover:bg-teal-50 disabled:opacity-50 text-sm py-1 px-3 rounded"
+          >
+            {generating ? 'Generating…' : 'Generate recovery codes'}
+          </button>
+        )}
       </div>
     </div>
   );
