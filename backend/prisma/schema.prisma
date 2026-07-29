@@ -80,8 +80,28 @@ model Connection {
   recipient        User       @relation("RecipientConnections", fields: [recipientId], references: [id])
   topics           Topic[]
   safetyScreens    SafetyScreen[]
+  subscription     Subscription?
 
   @@unique([creatorId, recipientId])
+}
+
+// One paid subscription covers a whole connection (both partners).
+// Status mirrors Stripe verbatim; entitlement logic decides which statuses
+// count as paid. Only Stripe IDs are stored — the payer's real identity
+// (name, email, card) stays with Stripe and is never imported.
+model Subscription {
+  id                   String    @id @default(uuid())
+  connectionId         String    @unique
+  payerUserId          String
+  stripeCustomerId     String
+  stripeSubscriptionId String    @unique
+  status               String
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  // Relationships
+  connection Connection @relation(fields: [connectionId], references: [id])
 }
 
 // Per-partner private safety screening, completed once per connection before

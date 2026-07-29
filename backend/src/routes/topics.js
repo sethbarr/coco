@@ -10,6 +10,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const auth = require('../middleware/auth');
 const { notify } = require('../services/notify');
+const { canCreateTopic } = require('../services/billing');
 
 router.use(auth);
 
@@ -135,6 +136,16 @@ router.post('/', async (req, res) => {
     const { mineDone } = await safetyScreenStatus(connectionId, userId);
     if (!mineDone) {
       return res.status(403).json(SCREEN_REQUIRED);
+    }
+
+    // Free tier (only when BILLING_ENABLED): one active topic per connection.
+    // Never gates existing topics, messages, or check-ins.
+    const entitlement = await canCreateTopic(connectionId);
+    if (!entitlement.entitled) {
+      return res.status(402).json({
+        code: 'UPGRADE_REQUIRED',
+        message: 'The free plan includes one active topic per connection. Upgrade to work on more topics together.'
+      });
     }
 
     const topic = await prisma.topic.create({

@@ -82,6 +82,11 @@ async function req(method, path, token, body) {
   const topic = await req('POST', '/topics', t1, { connectionId: connId, title: 'e2e topic' });
   check('topic creation allowed after screen', topic.status === 201, topic);
 
+  // With BILLING_ENABLED off (testing/CI default), the free-tier topic cap
+  // must not apply — a second topic just works
+  const topic2 = await req('POST', '/topics', t1, { connectionId: connId, title: 'e2e topic 2' });
+  check('second topic allowed with billing disabled', topic2.status === 201, topic2);
+
   // --- Messages + safety pipeline (no ANTHROPIC_API_KEY in CI: Coco uses
   // canned fallbacks and the classifier degrades to 'concern' on screen hits,
   // which is exactly the degraded mode worth asserting) ---

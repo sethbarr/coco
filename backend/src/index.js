@@ -34,6 +34,11 @@ app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true
 }));
+// Stripe webhook needs the raw body for signature verification, so it must
+// be mounted before express.json()
+const billing = require('./routes/billing');
+app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), billing.webhookHandler);
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -46,6 +51,7 @@ app.use('/api/messages', require('./routes/messages'));
 app.use('/api/connections', require('./routes/connections'));
 app.use('/api/topics', require('./routes/topics'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/billing', billing.router);
 
 // In production, serve the built React app from the same server
 // (same origin: no CORS config needed, WebSockets connect to the same host)
