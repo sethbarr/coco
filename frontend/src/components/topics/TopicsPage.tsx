@@ -5,6 +5,7 @@ import { RootState } from '../../store';
 import { fetchConnections } from '../../store/connectionSlice';
 import api from '../../utils/api';
 import SafetyScreenForm from './SafetyScreenForm';
+import UpgradeCard from '../billing/UpgradeCard';
 
 export interface TopicSummaryView {
   content: string | null;
@@ -48,6 +49,7 @@ const TopicsPage: React.FC = () => {
   const [connectionId, setConnectionId] = useState('');
   const [creating, setCreating] = useState(false);
   const [screeningConnectionId, setScreeningConnectionId] = useState<string | null>(null);
+  const [upgradeConnectionId, setUpgradeConnectionId] = useState<string | null>(null);
 
   const activeConnections = connections.filter(c => c.status === 'active');
 
@@ -79,6 +81,8 @@ const TopicsPage: React.FC = () => {
       if (err.response?.data?.code === 'SAFETY_SCREEN_REQUIRED') {
         // Complete the private safety check-in, then the user can retry
         setScreeningConnectionId(connectionId);
+      } else if (err.response?.data?.code === 'UPGRADE_REQUIRED') {
+        setUpgradeConnectionId(connectionId);
       } else {
         setError(err.response?.data?.message || 'Failed to create topic');
       }
@@ -151,6 +155,14 @@ const TopicsPage: React.FC = () => {
                 }
               }}
               onCancel={() => setScreeningConnectionId(null)}
+            />
+          </div>
+        )}
+        {upgradeConnectionId && (
+          <div className="mt-4">
+            <UpgradeCard
+              connectionId={upgradeConnectionId}
+              onCancel={() => setUpgradeConnectionId(null)}
             />
           </div>
         )}

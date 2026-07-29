@@ -9,6 +9,7 @@ import ApiTester from './components/auth/ApiTester';
 import SimpleLoginPage from './components/auth/SimpleLoginPage';
 import SignupPage from './components/auth/SignupPage';
 import RecoverPage from './components/auth/RecoverPage';
+import PrivacyPage from './components/PrivacyPage';
 import Dashboard from './components/Dashboard';
 import ChatInterface from './components/chat/ChatInterface';
 import ConnectionsPage from './components/connections/ConnectionsPage';
@@ -103,11 +104,17 @@ const App: React.FC = () => {
                   Login to Start
                 </Link>
               )}
+              <p className="mt-6 text-sm">
+                <Link to="/privacy" className="text-teal-600 hover:text-teal-800 underline">
+                  How Coco handles privacy & safety
+                </Link>
+              </p>
             </div>
           } />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/recover" element={<RecoverPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/test-login" element={<TestLoginPage />} />
           <Route path="/api-tester" element={<ApiTester />} />
           <Route path="/simple-login" element={<SimpleLoginPage />} />

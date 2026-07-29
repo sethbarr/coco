@@ -216,6 +216,12 @@ const SignupPage: React.FC = () => {
             {isLoading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
+        <p className="text-xs text-gray-500 mt-4 text-center">
+          No email or real name required.{' '}
+          <a href="/privacy" className="text-teal-600 hover:text-teal-800 underline">
+            How Coco handles privacy & safety
+          </a>
+        </p>
       </div>
     </div>
   );
