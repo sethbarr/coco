@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Feeling: unheard">
+<title>Feeling: unheard</title>
+<circle cx="60" cy="60" r="46" fill="#CFD6BF" stroke="#4F5B44" stroke-width="6"></circle>
+      <circle cx="45" cy="56" r="6" fill="#4F5B44"></circle><circle cx="75" cy="56" r="6" fill="#4F5B44"></circle>
+      <path d="M44 82 L76 82" stroke="#4F5B44" stroke-width="6" stroke-linecap="round"></path>
+      <path d="M92 34 C104 40 104 54 94 60" fill="none" stroke="#4F5B44" stroke-width="5" stroke-linecap="round"></path>
+</svg>

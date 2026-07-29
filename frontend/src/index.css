@@ -32,6 +32,12 @@ body {
 }
 
 /* Animations */
+/* Gentle sway for Coco's leaf sprout (referenced by the inline sprite) */
+@keyframes coco-leaf {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-7deg); }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

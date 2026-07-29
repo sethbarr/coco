@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Feeling: overwhelmed">
+<title>Feeling: overwhelmed</title>
+<circle cx="60" cy="60" r="46" fill="#D9C7DA" stroke="#5B4A5E" stroke-width="6"></circle>
+      <path d="M38 50 L52 60 M38 60 L52 50" stroke="#5B4A5E" stroke-width="6" stroke-linecap="round"></path>
+      <path d="M68 50 L82 60 M68 60 L82 50" stroke="#5B4A5E" stroke-width="6" stroke-linecap="round"></path>
+      <path d="M46 84 C52 78 68 78 74 84" fill="none" stroke="#5B4A5E" stroke-width="6" stroke-linecap="round"></path>
+</svg>

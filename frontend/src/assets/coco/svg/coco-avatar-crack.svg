@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Coco avatar mark">
+<title>Coco avatar mark</title>
+<path d="M100 28 C138 40 168 78 168 116 C168 152 138 177 100 177 C62 177 32 152 32 116 C32 78 62 40 100 28 Z" fill="#B4643E" stroke="#4A2A1F" stroke-width="10" stroke-linejoin="round"></path>
+      <path d="M99 31 C96 17 103 6 115 5" fill="none" stroke="#4A2A1F" stroke-width="11" stroke-linecap="round"></path>
+      <path d="M158 124 L148 140 L154 152" fill="none" stroke="#4A2A1F" stroke-width="6" stroke-linecap="round"></path>
+      <circle cx="78" cy="112" r="11" fill="#4A2A1F"></circle><circle cx="122" cy="112" r="11" fill="#4A2A1F"></circle>
+      <path d="M87 138 C93 147 107 147 113 138" fill="none" stroke="#4A2A1F" stroke-width="7" stroke-linecap="round"></path>
+      <g fill="none" stroke="#4A2A1F" stroke-width="6" stroke-linecap="round"><path d="M158 124 L148 140 L154 152"></path></g>
+</svg>

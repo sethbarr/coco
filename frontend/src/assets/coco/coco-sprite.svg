@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">
+<defs>
+<g id="c-shadow"><ellipse cx="100" cy="184" rx="54" ry="8" fill="var(--coco-shade, #E8D9C2)"></ellipse></g>
+    <g id="c-shell">
+      <path d="M100 28 C138 40 168 78 168 116 C168 152 138 177 100 177 C62 177 32 152 32 116 C32 78 62 40 100 28 Z" fill="var(--coco-fill, #B4643E)" stroke="var(--coco-line, #4A2A1F)" stroke-width="8" stroke-linejoin="round"></path>
+      <path d="M99 31 C96 18 102 7 113 6" fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="9" stroke-linecap="round"></path>
+      <ellipse cx="126" cy="6" rx="11" ry="6" transform="rotate(-16 126 6)" fill="var(--coco-fiber, #D18C63)" stroke="var(--coco-line, #4A2A1F)" stroke-width="6"></ellipse>
+      <g fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="3.4" stroke-linecap="round" opacity=".85">
+        <path d="M161 126 L152 140 L157 150"></path><path d="M152 140 L144 139"></path>
+      </g>
+    </g>
+    <g id="c-fiber" fill="none" stroke="var(--coco-fiber, #D18C63)" stroke-width="5" stroke-linecap="round" opacity=".55">
+      <path d="M62 72 C58 81 56 89 56 96"></path>
+      <path d="M139 77 C143 86 145 94 145 100"></path>
+      <path d="M48 120 C47 126 47 132 48 137"></path>
+      <path d="M126 52 C131 57 135 62 137 67"></path>
+    </g>
+    <g id="c-body"><use href="#c-shadow" xlink:href="#c-shadow"></use><use href="#c-shell" xlink:href="#c-shell"></use><use href="#c-fiber" xlink:href="#c-fiber"></use></g>
+
+    <g id="c-crack" fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="3.4" stroke-linecap="round" opacity=".85">
+      <path d="M161 126 L152 140 L157 150"></path>
+      <path d="M152 140 L144 139"></path>
+    </g>
+    <g id="c-pores" fill="var(--coco-line, #4A2A1F)" opacity=".22">
+      <circle cx="52" cy="146" r="4"></circle><circle cx="64" cy="152" r="4"></circle><circle cx="55" cy="158" r="4"></circle>
+    </g>
+    <g id="c-leaf-big" style="transform-origin: 104px 28px; animation: coco-leaf 3.6s ease-in-out infinite;">
+      <path d="M104 26 C112 8 130 2 146 6 C140 22 124 32 104 26 Z" fill="var(--coco-fiber, #D18C63)" stroke="var(--coco-line, #4A2A1F)" stroke-width="6" stroke-linejoin="round"></path>
+      <path d="M110 22 C122 16 134 12 143 10" fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="3" opacity=".5"></path>
+    </g>
+
+    
+    
+    
+    
+    
+
+    <g id="c-eyes-open" fill="var(--coco-line, #4A2A1F)">
+      <circle cx="76" cy="108" r="10"></circle><circle cx="124" cy="108" r="10"></circle>
+      <circle cx="72.5" cy="104" r="3.2" fill="#FBF7EF"></circle><circle cx="120.5" cy="104" r="3.2" fill="#FBF7EF"></circle>
+    </g>
+    <g id="c-eyes-closed" fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="6" stroke-linecap="round">
+      <path d="M65 106 C71 115 82 115 88 106"></path><path d="M112 106 C118 115 129 115 135 106"></path>
+    </g>
+    <g id="c-eyes-up" fill="var(--coco-line, #4A2A1F)">
+      <circle cx="76" cy="104" r="10"></circle><circle cx="124" cy="104" r="10"></circle>
+      <circle cx="78" cy="99" r="3.2" fill="#FBF7EF"></circle><circle cx="126" cy="99" r="3.2" fill="#FBF7EF"></circle>
+    </g>
+    <g id="c-brows-soft" fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="6" stroke-linecap="round">
+      <path d="M64 87 C70 81 82 81 88 86"></path><path d="M112 86 C118 81 130 81 136 87"></path>
+    </g>
+    <g id="c-brows-curious" fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="6" stroke-linecap="round">
+      <path d="M63 86 C69 79 81 79 87 85"></path><path d="M113 80 C119 74 131 75 137 82"></path>
+    </g>
+    <g id="c-brows-tender" fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="6" stroke-linecap="round">
+      <path d="M63 89 C70 84 80 81 88 81"></path><path d="M112 81 C120 81 130 84 137 89"></path>
+    </g>
+    <g id="c-blush" opacity=".5"><ellipse cx="55" cy="126" rx="12" ry="7.5" fill="var(--coco-blush, #E08A6B)"></ellipse><ellipse cx="145" cy="126" rx="12" ry="7.5" fill="var(--coco-blush, #E08A6B)"></ellipse></g>
+    <path id="c-smile" d="M87 130 C93 139 107 139 113 130" fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="6" stroke-linecap="round"></path>
+    <path id="c-smile-wide" d="M82 128 C90 146 110 146 118 128 Z" fill="var(--coco-line, #4A2A1F)"></path>
+    <path id="c-mouth-o" d="M100 128 a7 8 0 1 0 .1 0 Z" fill="var(--coco-line, #4A2A1F)"></path>
+    <path id="c-mouth-level" d="M89 134 L111 134" fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="6" stroke-linecap="round"></path>
+
+    <g id="c-arms-fold">
+      <g fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="22" stroke-linecap="round"><path d="M76 156 C60 162 46 168 38 172"></path><path d="M124 156 C140 162 154 168 162 172"></path></g>
+      <g fill="none" stroke="var(--coco-fill, #B4643E)" stroke-width="10" stroke-linecap="round"><path d="M76 156 C60 162 46 168 38 172"></path><path d="M124 156 C140 162 154 168 162 172"></path></g>
+    </g>
+    <g id="c-arms-chin">
+      <g fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="22" stroke-linecap="round"><path d="M70 156 C44 156 22 142 26 124"></path><path d="M124 156 C140 162 154 168 162 172"></path></g>
+      <g fill="none" stroke="var(--coco-fill, #B4643E)" stroke-width="10" stroke-linecap="round"><path d="M70 156 C44 156 22 142 26 124"></path><path d="M124 156 C140 162 154 168 162 172"></path></g>
+    </g>
+    <g id="c-arms-one-up">
+      <g fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="22" stroke-linecap="round"><path d="M64 148 L14 92"></path><path d="M124 156 C140 162 154 168 162 172"></path></g>
+      <g fill="none" stroke="var(--coco-fill, #B4643E)" stroke-width="10" stroke-linecap="round"><path d="M64 148 L14 92"></path><path d="M124 156 C140 162 154 168 162 172"></path></g>
+    </g>
+    <g id="c-arms-both-up">
+      <g fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="22" stroke-linecap="round"><path d="M64 148 L14 92"></path><path d="M136 148 L186 92"></path></g>
+      <g fill="none" stroke="var(--coco-fill, #B4643E)" stroke-width="10" stroke-linecap="round"><path d="M64 148 L14 92"></path><path d="M136 148 L186 92"></path></g>
+    </g>
+    <g id="c-arms-open">
+      <g fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="22" stroke-linecap="round"><path d="M68 152 L20 110"></path><path d="M124 156 C140 162 154 168 162 172"></path></g>
+      <g fill="none" stroke="var(--coco-fill, #B4643E)" stroke-width="10" stroke-linecap="round"><path d="M68 152 L20 110"></path><path d="M124 156 C140 162 154 168 162 172"></path></g>
+    </g>
+    <g id="c-arms-nub">
+      <g fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="22" stroke-linecap="round"><path d="M80 158 C64 164 52 170 44 175"></path><path d="M120 158 C136 164 148 170 156 175"></path></g>
+      <g fill="none" stroke="var(--coco-fill, #B4643E)" stroke-width="10" stroke-linecap="round"><path d="M80 158 C64 164 52 170 44 175"></path><path d="M120 158 C136 164 148 170 156 175"></path></g>
+    </g>
+
+    <g id="c-partner">
+      <ellipse cx="100" cy="184" rx="46" ry="7" fill="var(--coco-shade, #E8D9C2)"></ellipse>
+      <path d="M100 46 C120 46 133 62 133 80 C133 92 127 101 119 106 C144 114 158 134 160 177 L40 177 C42 134 56 114 81 106 C73 101 67 92 67 80 C67 62 80 46 100 46 Z" fill="#99f6e4" stroke="#0d9488" stroke-width="7" stroke-linejoin="round"></path>
+    </g>
+<symbol id="coco-sig-crack" viewBox="0 0 200 200"><use href="#c-shadow" xlink:href="#c-shadow"></use><use href="#c-arms-fold" xlink:href="#c-arms-fold"></use><use href="#c-shell" xlink:href="#c-shell"></use><use href="#c-fiber" xlink:href="#c-fiber"></use><use href="#c-brows-soft" xlink:href="#c-brows-soft"></use><use href="#c-eyes-open" xlink:href="#c-eyes-open"></use><use href="#c-smile" xlink:href="#c-smile"></use></symbol>
+<symbol id="coco-sig-pores" viewBox="0 0 200 200"><use href="#c-shadow" xlink:href="#c-shadow"></use><use href="#c-arms-fold" xlink:href="#c-arms-fold"></use><use href="#c-shell" xlink:href="#c-shell"></use><use href="#c-fiber" xlink:href="#c-fiber"></use><use href="#c-pores" xlink:href="#c-pores"></use><use href="#c-brows-soft" xlink:href="#c-brows-soft"></use><use href="#c-eyes-open" xlink:href="#c-eyes-open"></use><use href="#c-smile" xlink:href="#c-smile"></use></symbol>
+<symbol id="coco-sig-leaf" viewBox="0 0 200 200"><use href="#c-shadow" xlink:href="#c-shadow"></use><use href="#c-arms-fold" xlink:href="#c-arms-fold"></use><use href="#c-shell" xlink:href="#c-shell"></use><use href="#c-fiber" xlink:href="#c-fiber"></use><use href="#c-leaf-big" xlink:href="#c-leaf-big"></use><use href="#c-brows-soft" xlink:href="#c-brows-soft"></use><use href="#c-eyes-open" xlink:href="#c-eyes-open"></use><use href="#c-smile" xlink:href="#c-smile"></use></symbol>
+<symbol id="coco-avatar-crack" viewBox="0 0 200 200"><use href="#coco-avatar" xlink:href="#coco-avatar"></use>
+      <g fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="6" stroke-linecap="round"><path d="M158 124 L148 140 L154 152"></path></g></symbol>
+<symbol id="coco-glyph" viewBox="0 0 200 200"><path d="M100 28 C138 40 168 78 168 116 C168 152 138 177 100 177 C62 177 32 152 32 116 C32 78 62 40 100 28 Z" fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="9" stroke-linejoin="round"></path>
+      <path d="M99 31 C96 17 103 6 115 5" fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="9" stroke-linecap="round"></path>
+      <path d="M152 112 L140 132 L147 146" fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="9" stroke-linecap="round"></path></symbol>
+<symbol id="coco-listening" viewBox="0 0 200 200"><use href="#c-shadow" xlink:href="#c-shadow"></use><use href="#c-arms-fold" xlink:href="#c-arms-fold"></use><use href="#c-shell" xlink:href="#c-shell"></use><use href="#c-fiber" xlink:href="#c-fiber"></use><use href="#c-brows-soft" xlink:href="#c-brows-soft"></use><use href="#c-eyes-open" xlink:href="#c-eyes-open"></use><use href="#c-smile" xlink:href="#c-smile"></use></symbol>
+<symbol id="coco-asking" viewBox="0 0 200 200"><use href="#c-shadow" xlink:href="#c-shadow"></use><use href="#c-arms-chin" xlink:href="#c-arms-chin"></use><use href="#c-shell" xlink:href="#c-shell"></use><use href="#c-fiber" xlink:href="#c-fiber"></use><use href="#c-brows-curious" xlink:href="#c-brows-curious"></use><use href="#c-eyes-open" xlink:href="#c-eyes-open"></use><use href="#c-mouth-o" xlink:href="#c-mouth-o"></use>
+      <circle cx="163" cy="66" r="4.5" fill="#5eead4" stroke="#0d9488" stroke-width="3"></circle>
+      <rect x="140" y="8" width="56" height="46" rx="18" fill="#FBF7EF" stroke="#0d9488" stroke-width="5"></rect>
+      <path d="M161 21 C161 14 176 14 175 22 C174 28 168 28 168 35" fill="none" stroke="#0d9488" stroke-width="5" stroke-linecap="round"></path>
+      <circle cx="168" cy="43" r="3.2" fill="#0d9488"></circle></symbol>
+<symbol id="coco-reflecting" viewBox="0 0 200 200"><use href="#c-shadow" xlink:href="#c-shadow"></use><use href="#c-arms-chin" xlink:href="#c-arms-chin"></use><use href="#c-shell" xlink:href="#c-shell"></use><use href="#c-fiber" xlink:href="#c-fiber"></use><use href="#c-eyes-closed" xlink:href="#c-eyes-closed"></use><use href="#c-smile" xlink:href="#c-smile"></use><use href="#c-blush" xlink:href="#c-blush"></use>
+      <circle cx="158" cy="62" r="4" fill="#99f6e4" stroke="#0d9488" stroke-width="3"></circle>
+      <circle cx="172" cy="44" r="6" fill="#99f6e4" stroke="#0d9488" stroke-width="3.5"></circle>
+      <circle cx="184" cy="22" r="9" fill="#FBF7EF" stroke="#0d9488" stroke-width="4"></circle></symbol>
+<symbol id="coco-encouraging" viewBox="0 0 200 200"><use href="#c-shadow" xlink:href="#c-shadow"></use><use href="#c-arms-one-up" xlink:href="#c-arms-one-up"></use><use href="#c-shell" xlink:href="#c-shell"></use><use href="#c-fiber" xlink:href="#c-fiber"></use><use href="#c-brows-soft" xlink:href="#c-brows-soft"></use><use href="#c-eyes-open" xlink:href="#c-eyes-open"></use><use href="#c-smile-wide" xlink:href="#c-smile-wide"></use>
+      <g fill="none" stroke="#F0A742" stroke-width="7" stroke-linecap="round">
+        <path d="M100 12 L100 2"></path><path d="M148 26 L154 17"></path><path d="M52 26 L46 17"></path><path d="M176 58 L188 54"></path>
+      </g></symbol>
+<symbol id="coco-hopeful" viewBox="0 0 200 200"><use href="#c-shadow" xlink:href="#c-shadow"></use><use href="#c-arms-fold" xlink:href="#c-arms-fold"></use><use href="#c-shell" xlink:href="#c-shell"></use><use href="#c-fiber" xlink:href="#c-fiber"></use><use href="#c-brows-tender" xlink:href="#c-brows-tender"></use><use href="#c-eyes-up" xlink:href="#c-eyes-up"></use><use href="#c-smile" xlink:href="#c-smile"></use>
+      <g fill="none" stroke-linecap="round">
+        <path d="M150 74 A38 38 0 0 1 196 46" stroke="#5eead4" stroke-width="7"></path>
+        <path d="M152 88 A50 50 0 0 1 198 58" stroke="#F0A742" stroke-width="7" opacity=".8"></path>
+      </g></symbol>
+<symbol id="coco-supportive" viewBox="0 0 320 200"><g transform="translate(-8,10) scale(.92)"><use href="#c-shadow" xlink:href="#c-shadow"></use><use href="#c-arms-fold" xlink:href="#c-arms-fold"></use><use href="#c-shell" xlink:href="#c-shell"></use><use href="#c-fiber" xlink:href="#c-fiber"></use><use href="#c-brows-tender" xlink:href="#c-brows-tender"></use><use href="#c-eyes-closed" xlink:href="#c-eyes-closed"></use><use href="#c-smile" xlink:href="#c-smile"></use><use href="#c-blush" xlink:href="#c-blush"></use></g>
+      <g transform="translate(148,8) scale(.9)"><use href="#c-partner" xlink:href="#c-partner"></use></g></symbol>
+<symbol id="coco-celebrating" viewBox="0 0 200 200"><use href="#c-shadow" xlink:href="#c-shadow"></use><use href="#c-arms-both-up" xlink:href="#c-arms-both-up"></use><use href="#c-shell" xlink:href="#c-shell"></use><use href="#c-fiber" xlink:href="#c-fiber"></use><use href="#c-brows-soft" xlink:href="#c-brows-soft"></use><use href="#c-eyes-open" xlink:href="#c-eyes-open"></use><use href="#c-smile-wide" xlink:href="#c-smile-wide"></use>
+      <g stroke-linecap="round" stroke-width="7" fill="none">
+        <path d="M24 44 L30 34" stroke="#0d9488"></path><path d="M60 20 L66 12" stroke="#F0A742"></path>
+        <path d="M140 16 L146 26" stroke="#0d9488"></path><path d="M178 40 L186 32" stroke="#F0A742"></path>
+        <path d="M12 84 L20 78" stroke="#5eead4"></path><path d="M188 86 L180 80" stroke="#5eead4"></path>
+      </g></symbol>
+<symbol id="coco-waiting" viewBox="0 0 200 200"><use href="#c-shadow" xlink:href="#c-shadow"></use><use href="#c-arms-nub" xlink:href="#c-arms-nub"></use><use href="#c-shell" xlink:href="#c-shell"></use><use href="#c-fiber" xlink:href="#c-fiber"></use><use href="#c-brows-soft" xlink:href="#c-brows-soft"></use><use href="#c-eyes-closed" xlink:href="#c-eyes-closed"></use><use href="#c-mouth-level" xlink:href="#c-mouth-level"></use>
+      <g fill="#0d9488"><circle cx="76" cy="182" r="7"></circle><circle cx="100" cy="182" r="7"></circle><circle cx="124" cy="182" r="7"></circle></g></symbol>
+<symbol id="coco-safety" viewBox="0 0 200 200"><use href="#c-shadow" xlink:href="#c-shadow"></use><use href="#c-arms-open" xlink:href="#c-arms-open"></use><use href="#c-shell" xlink:href="#c-shell"></use><use href="#c-fiber" xlink:href="#c-fiber"></use><use href="#c-brows-soft" xlink:href="#c-brows-soft"></use><use href="#c-eyes-open" xlink:href="#c-eyes-open"></use><use href="#c-smile" xlink:href="#c-smile"></use>
+      <circle cx="168" cy="44" r="22" fill="none" stroke="#0d9488" stroke-width="6"></circle>
+      <path d="M168 34 L168 48" stroke="#0d9488" stroke-width="6" stroke-linecap="round"></path>
+      <circle cx="168" cy="57" r="3.6" fill="#0d9488"></circle></symbol>
+<symbol id="coco-avatar" viewBox="0 0 200 200"><path d="M100 28 C138 40 168 78 168 116 C168 152 138 177 100 177 C62 177 32 152 32 116 C32 78 62 40 100 28 Z" fill="var(--coco-fill, #B4643E)" stroke="var(--coco-line, #4A2A1F)" stroke-width="10" stroke-linejoin="round"></path>
+      <path d="M99 31 C96 17 103 6 115 5" fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="11" stroke-linecap="round"></path>
+      <path d="M158 124 L148 140 L154 152" fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="6" stroke-linecap="round"></path>
+      <circle cx="78" cy="112" r="11" fill="var(--coco-line, #4A2A1F)"></circle><circle cx="122" cy="112" r="11" fill="var(--coco-line, #4A2A1F)"></circle>
+      <path d="M87 138 C93 147 107 147 113 138" fill="none" stroke="var(--coco-line, #4A2A1F)" stroke-width="7" stroke-linecap="round"></path></symbol>
+<symbol id="token-sad" viewBox="0 0 120 120"><circle cx="60" cy="60" r="46" fill="#BFD3D6" stroke="#4A5B5E" stroke-width="6"></circle>
+      <circle cx="45" cy="54" r="6" fill="#4A5B5E"></circle><circle cx="75" cy="54" r="6" fill="#4A5B5E"></circle>
+      <path d="M46 82 C52 74 68 74 74 82" fill="none" stroke="#4A5B5E" stroke-width="6" stroke-linecap="round"></path></symbol>
+<symbol id="token-overwhelmed" viewBox="0 0 120 120"><circle cx="60" cy="60" r="46" fill="#D9C7DA" stroke="#5B4A5E" stroke-width="6"></circle>
+      <path d="M38 50 L52 60 M38 60 L52 50" stroke="#5B4A5E" stroke-width="6" stroke-linecap="round"></path>
+      <path d="M68 50 L82 60 M68 60 L82 50" stroke="#5B4A5E" stroke-width="6" stroke-linecap="round"></path>
+      <path d="M46 84 C52 78 68 78 74 84" fill="none" stroke="#5B4A5E" stroke-width="6" stroke-linecap="round"></path></symbol>
+<symbol id="token-unheard" viewBox="0 0 120 120"><circle cx="60" cy="60" r="46" fill="#CFD6BF" stroke="#4F5B44" stroke-width="6"></circle>
+      <circle cx="45" cy="56" r="6" fill="#4F5B44"></circle><circle cx="75" cy="56" r="6" fill="#4F5B44"></circle>
+      <path d="M44 82 L76 82" stroke="#4F5B44" stroke-width="6" stroke-linecap="round"></path>
+      <path d="M92 34 C104 40 104 54 94 60" fill="none" stroke="#4F5B44" stroke-width="5" stroke-linecap="round"></path></symbol>
+<symbol id="token-lonely" viewBox="0 0 120 120"><circle cx="60" cy="60" r="46" fill="#C9CEDC" stroke="#474F63" stroke-width="6"></circle>
+      <path d="M38 52 C44 48 52 48 56 52" fill="none" stroke="#474F63" stroke-width="6" stroke-linecap="round"></path>
+      <path d="M64 52 C68 48 76 48 82 52" fill="none" stroke="#474F63" stroke-width="6" stroke-linecap="round"></path>
+      <path d="M50 82 C56 76 64 76 70 80" fill="none" stroke="#474F63" stroke-width="6" stroke-linecap="round"></path></symbol>
+<symbol id="token-angry" viewBox="0 0 120 120"><circle cx="60" cy="60" r="46" fill="#E2B5A3" stroke="#6B3A2B" stroke-width="6"></circle>
+      <path d="M38 46 L54 54" stroke="#6B3A2B" stroke-width="6" stroke-linecap="round"></path>
+      <path d="M82 46 L66 54" stroke="#6B3A2B" stroke-width="6" stroke-linecap="round"></path>
+      <circle cx="46" cy="64" r="5" fill="#6B3A2B"></circle><circle cx="74" cy="64" r="5" fill="#6B3A2B"></circle>
+      <path d="M48 86 C54 80 66 80 72 86" fill="none" stroke="#6B3A2B" stroke-width="6" stroke-linecap="round"></path></symbol>
+</defs>
+</svg>

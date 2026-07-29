@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Feeling: angry">
+<title>Feeling: angry</title>
+<circle cx="60" cy="60" r="46" fill="#E2B5A3" stroke="#6B3A2B" stroke-width="6"></circle>
+      <path d="M38 46 L54 54" stroke="#6B3A2B" stroke-width="6" stroke-linecap="round"></path>
+      <path d="M82 46 L66 54" stroke="#6B3A2B" stroke-width="6" stroke-linecap="round"></path>
+      <circle cx="46" cy="64" r="5" fill="#6B3A2B"></circle><circle cx="74" cy="64" r="5" fill="#6B3A2B"></circle>
+      <path d="M48 86 C54 80 66 80 72 86" fill="none" stroke="#6B3A2B" stroke-width="6" stroke-linecap="round"></path>
+</svg>

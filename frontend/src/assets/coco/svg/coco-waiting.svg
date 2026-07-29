@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Coco waiting">
+<title>Coco waiting</title>
+<g><ellipse cx="100" cy="184" rx="54" ry="8" fill="#E8D9C2"></ellipse></g><g>
+      <g fill="none" stroke="#4A2A1F" stroke-width="22" stroke-linecap="round"><path d="M80 158 C64 164 52 170 44 175"></path><path d="M120 158 C136 164 148 170 156 175"></path></g><g>
+      <path d="M100 28 C138 40 168 78 168 116 C168 152 138 177 100 177 C62 177 32 152 32 116 C32 78 62 40 100 28 Z" fill="#B4643E" stroke="#4A2A1F" stroke-width="8" stroke-linejoin="round"></path>
+      <path d="M99 31 C96 18 102 7 113 6" fill="none" stroke="#4A2A1F" stroke-width="9" stroke-linecap="round"></path>
+      <ellipse cx="126" cy="6" rx="11" ry="6" transform="rotate(-16 126 6)" fill="#D18C63" stroke="#4A2A1F" stroke-width="6"></ellipse>
+      <g fill="none" stroke="#4A2A1F" stroke-width="3.4" stroke-linecap="round" opacity=".85">
+        <path d="M161 126 L152 140 L157 150"></path><path d="M152 140 L144 139"></path>
+      </g><g fill="none" stroke="#D18C63" stroke-width="5" stroke-linecap="round" opacity=".55">
+      <path d="M62 72 C58 81 56 89 56 96"></path>
+      <path d="M139 77 C143 86 145 94 145 100"></path>
+      <path d="M48 120 C47 126 47 132 48 137"></path>
+      <path d="M126 52 C131 57 135 62 137 67"></path>
+    </g><g fill="none" stroke="#4A2A1F" stroke-width="6" stroke-linecap="round">
+      <path d="M64 87 C70 81 82 81 88 86"></path><path d="M112 86 C118 81 130 81 136 87"></path>
+    </g><g fill="none" stroke="#4A2A1F" stroke-width="6" stroke-linecap="round">
+      <path d="M65 106 C71 115 82 115 88 106"></path><path d="M112 106 C118 115 129 115 135 106"></path>
+    </g><path d="M89 134 L111 134" fill="none" stroke="#4A2A1F" stroke-width="6" stroke-linecap="round"></path>
+      <g fill="#0d9488"><circle cx="76" cy="182" r="7"></circle><circle cx="100" cy="182" r="7"></circle><circle cx="124" cy="182" r="7"></circle></g>
+</g></g></svg>

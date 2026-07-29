@@ -10,6 +10,8 @@ import SimpleLoginPage from './components/auth/SimpleLoginPage';
 import SignupPage from './components/auth/SignupPage';
 import RecoverPage from './components/auth/RecoverPage';
 import PrivacyPage from './components/PrivacyPage';
+import LandingPage from './components/LandingPage';
+import { CocoSprite } from './components/coco/Coco';
 import Dashboard from './components/Dashboard';
 import ChatInterface from './components/chat/ChatInterface';
 import ConnectionsPage from './components/connections/ConnectionsPage';
@@ -41,9 +43,11 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Inline SVG symbol library for the Coco mascot — must be mounted once */}
+      <CocoSprite />
       <header className="bg-white shadow-sm py-4">
         <div className="container mx-auto px-4 flex justify-between items-center">
-          <Link to="/" className="text-2xl font-bold text-gray-900">Coco Counseling</Link>
+          <Link to="/" className="font-display text-2xl font-bold text-gray-900">coco</Link>
           <div>
             {!isAuthenticated ? (
               <>
@@ -85,32 +89,7 @@ const App: React.FC = () => {
       </header>
       <main className="container mx-auto px-4 py-8">
         <Routes>
-          <Route path="/" element={
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-4">Welcome to Coco Counseling</h2>
-              <p className="mb-6">Your supportive AI relationship counselor</p>
-              {isAuthenticated ? (
-                <Link 
-                  to="/chat" 
-                  className="bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 px-4 rounded"
-                >
-                  Start Talking with Coco
-                </Link>
-              ) : (
-                <Link 
-                  to="/login" 
-                  className="bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 px-4 rounded"
-                >
-                  Login to Start
-                </Link>
-              )}
-              <p className="mt-6 text-sm">
-                <Link to="/privacy" className="text-teal-600 hover:text-teal-800 underline">
-                  How Coco handles privacy & safety
-                </Link>
-              </p>
-            </div>
-          } />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/recover" element={<RecoverPage />} />

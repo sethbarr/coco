@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Feeling: lonely">
+<title>Feeling: lonely</title>
+<circle cx="60" cy="60" r="46" fill="#C9CEDC" stroke="#474F63" stroke-width="6"></circle>
+      <path d="M38 52 C44 48 52 48 56 52" fill="none" stroke="#474F63" stroke-width="6" stroke-linecap="round"></path>
+      <path d="M64 52 C68 48 76 48 82 52" fill="none" stroke="#474F63" stroke-width="6" stroke-linecap="round"></path>
+      <path d="M50 82 C56 76 64 76 70 80" fill="none" stroke="#474F63" stroke-width="6" stroke-linecap="round"></path>
+</svg>
