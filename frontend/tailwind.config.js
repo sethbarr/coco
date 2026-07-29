@@ -32,6 +32,11 @@ module.exports = {
         },
       },
       fontFamily: {
+        display: [
+          'Baloo 2',
+          'Inter',
+          'sans-serif',
+        ],
         sans: [
           'Inter',
           '-apple-system',
