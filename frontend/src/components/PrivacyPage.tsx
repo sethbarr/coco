@@ -28,9 +28,8 @@ const PrivacyPage: React.FC = () => (
         thoughtful, neutral friend than a clinician. Coco is not a therapist, doctor, or crisis
         service, and it will tell you so and point you to real humans (like the 988 Suicide &
         Crisis Lifeline) whenever a conversation goes somewhere that needs one. We can't list every available
-        resources but we will do our best. We might not be able (at the moment) 
-        to provide all available resources in your specific area. Please reach out to your local
-        crisis or help services if you need them.
+        resource, and we may not know the services in your specific area — please reach out to
+        your local crisis or support services if you need them.
       </p>
     </Q>
     <Q q="Who is Coco for?">
