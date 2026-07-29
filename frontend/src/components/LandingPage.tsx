@@ -104,7 +104,7 @@ const LandingPage: React.FC = () => {
 
       {/* Safety & privacy */}
       <div className="bg-gradient-to-r from-teal-500 to-blue-500 rounded-lg shadow-lg p-8 text-white mb-12 flex flex-col md:flex-row items-center gap-8">
-        <div className="shrink-0" style={{ ['--coco-line' as any]: '#ffffff' }}>
+        <div className="shrink-0 bg-white rounded-full p-6 shadow-md">
           <Coco state="safety" size={130} tier="mid" title="Coco, arms open" />
         </div>
         <div>
