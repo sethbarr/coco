@@ -4,6 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const auth = require('../middleware/auth');
 const { notify } = require('../services/notify');
+const { SCREEN_QUESTIONS, scoreScreen, RESOURCES } = require('../services/safety');
 
 // Middleware to check if user is authenticated
 router.use(auth);
@@ -279,6 +280,93 @@ router.delete('/:id', async (req, res) => {
     res.json({ message: 'Connection removed successfully' });
   } catch (error) {
     console.error('Error removing connection:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+/** Load an active connection and verify the requester is a member. */
+async function loadConnectionForUser(connectionId, userId) {
+  const connection = await prisma.connection.findFirst({
+    where: {
+      id: connectionId,
+      OR: [{ creatorId: userId }, { recipientId: userId }]
+    }
+  });
+  return connection;
+}
+
+/**
+ * @route GET /api/connections/:id/safety-screen
+ * @desc My screening status for this connection, plus whether my partner has
+ *       completed theirs. The partner's OUTCOME is never exposed — only
+ *       completion — because revealing it could endanger the discloser.
+ */
+router.get('/:id/safety-screen', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const connection = await loadConnectionForUser(req.params.id, userId);
+    if (!connection) return res.status(404).json({ message: 'Connection not found' });
+
+    const screens = await prisma.safetyScreen.findMany({
+      where: { connectionId: connection.id }
+    });
+    const mine = screens.find(s => s.userId === userId) || null;
+    const partnerCompleted = screens.some(s => s.userId !== userId);
+
+    res.json({
+      questions: SCREEN_QUESTIONS.map(q => ({ id: q.id, text: q.text })),
+      mine: mine ? { outcome: mine.outcome, completedAt: mine.createdAt } : null,
+      partnerCompleted
+    });
+  } catch (error) {
+    console.error('Error loading safety screen:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+/**
+ * @route POST /api/connections/:id/safety-screen
+ * @desc Submit my screening answers. Outcome is computed server-side.
+ *       A flagged outcome returns private resources; it never blocks the
+ *       flow by itself — the person decides whether to continue.
+ */
+router.post('/:id/safety-screen', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const connection = await loadConnectionForUser(req.params.id, userId);
+    if (!connection) return res.status(404).json({ message: 'Connection not found' });
+
+    const result = scoreScreen(req.body.answers);
+    if (result.error) return res.status(400).json({ message: result.error });
+
+    const screen = await prisma.safetyScreen.upsert({
+      where: { connectionId_userId: { connectionId: connection.id, userId } },
+      create: { connectionId: connection.id, userId, answers: req.body.answers, outcome: result.outcome },
+      update: { answers: req.body.answers, outcome: result.outcome }
+    });
+
+    if (result.outcome === 'flagged') {
+      await prisma.securityEvent.create({
+        data: {
+          userId,
+          eventType: 'safety_screen_flagged',
+          metadata: { connectionId: connection.id }
+        }
+      });
+    }
+
+    res.status(201).json({
+      outcome: screen.outcome,
+      completedAt: screen.createdAt,
+      ...(screen.outcome === 'flagged'
+        ? {
+            guidance: 'Based on your answers, a joint AI session may not be the right tool right now. Couples work — including AI-guided work — is generally not recommended when there is fear or control in a relationship, because it can make things less safe. The resources below are private; your partner will not see your answers or this message. You can still continue if you choose to.',
+            resources: RESOURCES.abuse
+          }
+        : {})
+    });
+  } catch (error) {
+    console.error('Error submitting safety screen:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

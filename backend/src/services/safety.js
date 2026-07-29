@@ -201,10 +201,45 @@ function crisisPauseMessage(category, sessionType) {
   return base;
 }
 
+/**
+ * Pre-joint-work safety screening. Joint sessions are contraindicated in
+ * coercive relationships (standard practice in couples counseling), so each
+ * partner answers these privately once per connection before joint work.
+ *
+ * `riskWhen` is the answer that indicates risk. The outcome gates NOTHING
+ * visible to the partner — flagged users get private resources and guidance,
+ * and decide for themselves whether to continue.
+ */
+const SCREEN_QUESTIONS = [
+  { id: 'fear', text: 'Are you ever afraid of your partner?', riskWhen: true },
+  { id: 'physical', text: 'Has your partner ever hit, pushed, choked, or otherwise physically hurt you?', riskWhen: true },
+  { id: 'control', text: 'Does your partner control where you go, who you see, or your access to money?', riskWhen: true },
+  { id: 'safe_disagree', text: 'Do you feel safe disagreeing with your partner?', riskWhen: false },
+];
+
+/**
+ * Score screening answers server-side.
+ * @param {Object} answers - { [questionId]: boolean }
+ * @returns {{outcome: 'clear'|'flagged'}|{error: string}}
+ */
+function scoreScreen(answers) {
+  if (!answers || typeof answers !== 'object') return { error: 'Answers are required' };
+  for (const q of SCREEN_QUESTIONS) {
+    if (typeof answers[q.id] !== 'boolean') {
+      return { error: 'Please answer every question' };
+    }
+  }
+  const flagged = SCREEN_QUESTIONS.some(q => answers[q.id] === q.riskWhen);
+  return { outcome: flagged ? 'flagged' : 'clear' };
+}
+
 module.exports = {
   screenMessage,
   classifyMessage,
   assessMessage,
   buildResourceCard,
   crisisPauseMessage,
+  SCREEN_QUESTIONS,
+  scoreScreen,
+  RESOURCES,
 };

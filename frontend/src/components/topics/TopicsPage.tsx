@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { fetchConnections } from '../../store/connectionSlice';
 import api from '../../utils/api';
+import SafetyScreenForm from './SafetyScreenForm';
 
 export interface TopicSummaryView {
   content: string | null;
@@ -15,6 +16,7 @@ export interface TopicSummaryView {
 export interface TopicView {
   id: string;
   title: string;
+  connectionId: string;
   status: 'prep' | 'joint_ready' | 'closed';
   createdAt: string;
   partner: { id: string; pseudonym: string };
@@ -45,6 +47,7 @@ const TopicsPage: React.FC = () => {
   const [title, setTitle] = useState('');
   const [connectionId, setConnectionId] = useState('');
   const [creating, setCreating] = useState(false);
+  const [screeningConnectionId, setScreeningConnectionId] = useState<string | null>(null);
 
   const activeConnections = connections.filter(c => c.status === 'active');
 
@@ -73,7 +76,12 @@ const TopicsPage: React.FC = () => {
       setTopics([res.data, ...topics]);
       setTitle('');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create topic');
+      if (err.response?.data?.code === 'SAFETY_SCREEN_REQUIRED') {
+        // Complete the private safety check-in, then the user can retry
+        setScreeningConnectionId(connectionId);
+      } else {
+        setError(err.response?.data?.message || 'Failed to create topic');
+      }
     } finally {
       setCreating(false);
     }
@@ -131,6 +139,21 @@ const TopicsPage: React.FC = () => {
           </form>
         )}
         {error && <p className="text-red-600 text-sm mt-3">{error}</p>}
+        {screeningConnectionId && (
+          <div className="mt-4">
+            <SafetyScreenForm
+              connectionId={screeningConnectionId}
+              onComplete={() => {
+                setScreeningConnectionId(null);
+                // Re-submit the topic they were trying to create
+                if (title.trim()) {
+                  handleCreate({ preventDefault: () => {} } as React.FormEvent);
+                }
+              }}
+              onCancel={() => setScreeningConnectionId(null)}
+            />
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow-md p-6">

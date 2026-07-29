@@ -48,6 +48,7 @@ model User {
   createdTopics Topic[] @relation("TopicCreator")
   sharedSummaries SharedSummary[] @relation("UserSummaries")
   notifications Notification[] @relation("UserNotifications")
+  safetyScreens SafetyScreen[] @relation("UserSafetyScreens")
 
 }
 
@@ -64,8 +65,27 @@ model Connection {
   creator          User       @relation("CreatorConnections", fields: [creatorId], references: [id])
   recipient        User       @relation("RecipientConnections", fields: [recipientId], references: [id])
   topics           Topic[]
+  safetyScreens    SafetyScreen[]
 
   @@unique([creatorId, recipientId])
+}
+
+// Per-partner private safety screening, completed once per connection before
+// joint work. `outcome` is computed server-side and NEVER shown to the partner
+// (gates check completion only) — revealing it could endanger the discloser.
+model SafetyScreen {
+  id           String   @id @default(uuid())
+  connectionId String
+  userId       String
+  answers      Json
+  outcome      String   // 'clear' | 'flagged'
+  createdAt    DateTime @default(now())
+
+  // Relationships
+  connection Connection @relation(fields: [connectionId], references: [id])
+  user       User       @relation("UserSafetyScreens", fields: [userId], references: [id])
+
+  @@unique([connectionId, userId])
 }
 
 model Topic {

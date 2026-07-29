@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api from '../../utils/api';
 import { TopicView } from './TopicsPage';
+import SafetyScreenForm from './SafetyScreenForm';
 
 interface PlanAgreement {
   id: string;
@@ -50,6 +51,9 @@ const TopicDetailPage: React.FC = () => {
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Set when a joint/check-in start is blocked pending my safety check-in;
+  // holds the action to retry after completion
+  const [screenRetry, setScreenRetry] = useState<null | (() => void)>(null);
 
   const load = useCallback(() => {
     api.get(`/topics/${id}`)
@@ -122,7 +126,11 @@ const TopicDetailPage: React.FC = () => {
       const res = await api.post(`/topics/${topic.id}/joint`);
       navigate(`/sessions/${res.data.sessionId}`);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to open joint session');
+      if (err.response?.data?.code === 'SAFETY_SCREEN_REQUIRED') {
+        setScreenRetry(() => openJoint);
+      } else {
+        setError(err.response?.data?.message || 'Failed to open joint session');
+      }
     } finally {
       setBusy(false);
     }
@@ -134,7 +142,11 @@ const TopicDetailPage: React.FC = () => {
       const res = await api.post(`/topics/${topic.id}/checkin`);
       navigate(`/sessions/${res.data.sessionId}`);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to start check-in');
+      if (err.response?.data?.code === 'SAFETY_SCREEN_REQUIRED') {
+        setScreenRetry(() => startCheckin);
+      } else {
+        setError(err.response?.data?.message || 'Failed to start check-in');
+      }
     } finally {
       setBusy(false);
     }
@@ -412,6 +424,19 @@ const TopicDetailPage: React.FC = () => {
         );
       })()}
 
+      {screenRetry && (
+        <div className="mb-4">
+          <SafetyScreenForm
+            connectionId={topic.connectionId}
+            onComplete={() => {
+              const retry = screenRetry;
+              setScreenRetry(null);
+              retry();
+            }}
+            onCancel={() => setScreenRetry(null)}
+          />
+        </div>
+      )}
       {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
       <Link to="/topics" className="text-teal-600 hover:text-teal-800">← Back to Topics</Link>
     </div>

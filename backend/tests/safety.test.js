@@ -1,4 +1,4 @@
-const { screenMessage, buildResourceCard, crisisPauseMessage } = require('../src/services/safety');
+const { screenMessage, buildResourceCard, crisisPauseMessage, scoreScreen, SCREEN_QUESTIONS } = require('../src/services/safety');
 
 describe('screenMessage', () => {
   test('flags suicidal language as self_harm', () => {
@@ -71,5 +71,34 @@ describe('crisisPauseMessage', () => {
 
   test('abuse pause in joint sessions uses the generic wording', () => {
     expect(crisisPauseMessage('abuse', 'joint')).not.toMatch(/quick-exit/);
+  });
+});
+
+describe('scoreScreen', () => {
+  const clearAnswers = { fear: false, physical: false, control: false, safe_disagree: true };
+
+  test('all-safe answers score clear', () => {
+    expect(scoreScreen(clearAnswers)).toEqual({ outcome: 'clear' });
+  });
+
+  test('any risk answer flags, including the reversed question', () => {
+    expect(scoreScreen({ ...clearAnswers, fear: true }).outcome).toBe('flagged');
+    expect(scoreScreen({ ...clearAnswers, physical: true }).outcome).toBe('flagged');
+    expect(scoreScreen({ ...clearAnswers, control: true }).outcome).toBe('flagged');
+    expect(scoreScreen({ ...clearAnswers, safe_disagree: false }).outcome).toBe('flagged');
+  });
+
+  test('rejects incomplete or malformed answers', () => {
+    expect(scoreScreen({ fear: false }).error).toBeDefined();
+    expect(scoreScreen(null).error).toBeDefined();
+    expect(scoreScreen({ ...clearAnswers, fear: 'yes' }).error).toBeDefined();
+  });
+
+  test('every question has an id, text, and riskWhen', () => {
+    for (const q of SCREEN_QUESTIONS) {
+      expect(typeof q.id).toBe('string');
+      expect(typeof q.text).toBe('string');
+      expect(typeof q.riskWhen).toBe('boolean');
+    }
   });
 });

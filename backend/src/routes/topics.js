@@ -13,6 +13,29 @@ const { notify } = require('../services/notify');
 
 router.use(auth);
 
+/**
+ * Safety-screen gates. Each partner privately screens once per connection
+ * before joint work (joint sessions are contraindicated in coercive
+ * relationships). Gates check COMPLETION only, never outcome — outcome is
+ * private to the person who answered.
+ */
+async function safetyScreenStatus(connectionId, userId) {
+  const screens = await prisma.safetyScreen.findMany({ where: { connectionId } });
+  return {
+    mineDone: screens.some(s => s.userId === userId),
+    partnerDone: screens.some(s => s.userId !== userId)
+  };
+}
+
+const SCREEN_REQUIRED = {
+  code: 'SAFETY_SCREEN_REQUIRED',
+  message: 'Before working on topics together, please take a minute for a short private safety check-in'
+};
+const PARTNER_SCREEN_PENDING = {
+  code: 'PARTNER_SCREEN_PENDING',
+  message: "Your partner hasn't finished their private safety check-in yet — joint sessions unlock once they do"
+};
+
 /** Load a topic and verify the requester is one of the two partners. */
 async function loadTopicForUser(topicId, userId) {
   const topic = await prisma.topic.findUnique({
@@ -69,6 +92,7 @@ function topicView(topic, userId) {
   return {
     id: topic.id,
     title: topic.title,
+    connectionId: topic.connectionId,
     status: topic.status,
     createdAt: topic.createdAt,
     partner: { id: partner.id, pseudonym: partner.pseudonym },
@@ -106,6 +130,11 @@ router.post('/', async (req, res) => {
     });
     if (!connection) {
       return res.status(404).json({ message: 'Active connection not found' });
+    }
+
+    const { mineDone } = await safetyScreenStatus(connectionId, userId);
+    if (!mineDone) {
+      return res.status(403).json(SCREEN_REQUIRED);
     }
 
     const topic = await prisma.topic.create({
@@ -309,6 +338,10 @@ router.post('/:id/joint', async (req, res) => {
       });
     }
 
+    const gate = await safetyScreenStatus(topic.connectionId, userId);
+    if (!gate.mineDone) return res.status(403).json(SCREEN_REQUIRED);
+    if (!gate.partnerDone) return res.status(403).json(PARTNER_SCREEN_PENDING);
+
     const { creator, recipient } = topic.connection;
     const session = await prisma.session.create({
       data: { type: 'joint', createdById: userId, topicId: topic.id }
@@ -351,6 +384,10 @@ router.post('/:id/checkin', async (req, res) => {
         message: 'No active agreements to review yet — finish a joint session and endorse its recap first'
       });
     }
+
+    const gate = await safetyScreenStatus(topic.connectionId, userId);
+    if (!gate.mineDone) return res.status(403).json(SCREEN_REQUIRED);
+    if (!gate.partnerDone) return res.status(403).json(PARTNER_SCREEN_PENDING);
 
     const { creator, recipient } = topic.connection;
     const session = await prisma.session.create({
