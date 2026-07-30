@@ -15,6 +15,14 @@ const Step: React.FC<{ n: number; state: any; title: string; children: React.Rea
   </div>
 );
 
+const UseCase: React.FC<{ title: string; example: string; children: React.ReactNode }> = ({ title, example, children }) => (
+  <div className="bg-white rounded-lg shadow-md p-6">
+    <h3 className="font-semibold text-gray-800 mb-2">{title}</h3>
+    <p className="text-sm text-teal-700 italic mb-2">{example}</p>
+    <p className="text-sm text-gray-600">{children}</p>
+  </div>
+);
+
 const LandingPage: React.FC = () => {
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
@@ -82,6 +90,42 @@ const LandingPage: React.FC = () => {
           Sessions end with small, specific agreements and a check-in date. Coco runs the
           check-ins: what worked, what didn't, keep or adjust.
         </Step>
+      </div>
+
+      {/* Use cases */}
+      <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">
+        Any two people, any recurring friction
+      </h2>
+      <p className="text-gray-600 text-center max-w-2xl mx-auto mb-6">
+        Coco was built for couples, but the process — prepare privately, share deliberately, talk
+        it through with a neutral guide — works wherever two people keep having the same hard
+        conversation.
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+        <UseCase title="Partners & couples" example="“We keep fighting about money, but the fight is never really about money.”">
+          Chores, finances, intimacy, in-laws — the topics that spiral in the moment go better
+          when you've each untangled your side first.
+        </UseCase>
+        <UseCase title="Co-parents" example="“Handoffs always turn into an argument in front of the kids.”">
+          Separated or together, align on schedules, screen time, and discipline with agreements
+          concrete enough to actually check on.
+        </UseCase>
+        <UseCase title="Housemates" example="“I'm tired of being the only one who notices the dishes.”">
+          Rent splits, cleaning, guests, noise — settle it once with a plan instead of another
+          passive-aggressive group chat.
+        </UseCase>
+        <UseCase title="Colleagues & co-founders" example="“I feel like I'm carrying this project and they don't see it.”">
+          Dividing work, giving feedback that landed badly, equity conversations — prepare what
+          you actually need before the meeting, not during it.
+        </UseCase>
+        <UseCase title="Family" example="“Every visit ends with the same argument we've had for ten years.”">
+          Adult siblings sharing care of a parent, parents and adult kids renegotiating
+          boundaries — old patterns are easier to change with a neutral third voice.
+        </UseCase>
+        <UseCase title="Friends" example="“Something shifted between us and neither of us will name it.”">
+          A loan that went unspoken, a wedding-party fallout, drifting apart — say the hard thing
+          before the friendship quietly ends instead.
+        </UseCase>
       </div>
 
       {/* The supportive wide pose */}
